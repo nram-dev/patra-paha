@@ -1,0 +1,383 @@
+{
+  "timestamp": "2025-12-14T03:23:33.647Z",
+  "summary": {
+    "totalFiles": 315,
+    "totalFolders": 50,
+    "deityFolders": 27,
+    "specialFolders": 22
+  },
+  "googleDocs": {
+    "total": 188,
+    "textOnly": 159,
+    "withImages": 29,
+    "imagePercentage": "15.43%"
+  },
+  "images": {
+    "total": 0,
+    "standalone": 0,
+    "inDocuments": 29,
+    "percentageOfAllFiles": "0.00%"
+  },
+  "folders": [
+    {
+      "name": "Namasankeerthanam",
+      "fileCount": 2,
+      "subfolderCount": 27,
+      "isDeityFolder": true,
+      "depth": 0
+    },
+    {
+      "name": "Valli Devesena Kalyanam",
+      "fileCount": 1,
+      "subfolderCount": 0,
+      "isDeityFolder": true,
+      "depth": 1
+    },
+    {
+      "name": "Abirami anthathi",
+      "fileCount": 2,
+      "subfolderCount": 0,
+      "isDeityFolder": true,
+      "depth": 1
+    },
+    {
+      "name": "Abhang Shibir",
+      "fileCount": 1,
+      "subfolderCount": 0,
+      "isDeityFolder": true,
+      "depth": 1
+    },
+    {
+      "name": "Meenakshi Kalyanam",
+      "fileCount": 1,
+      "subfolderCount": 0,
+      "isDeityFolder": true,
+      "depth": 1
+    },
+    {
+      "name": "Shiva Ashtapathi - Geethamala",
+      "fileCount": 1,
+      "subfolderCount": 0,
+      "isDeityFolder": true,
+      "depth": 1
+    },
+    {
+      "name": "Abhang-KSHT-Jun20",
+      "fileCount": 18,
+      "subfolderCount": 0,
+      "isDeityFolder": true,
+      "depth": 1
+    },
+    {
+      "name": "Ayyappa Todayamangalam",
+      "fileCount": 1,
+      "subfolderCount": 0,
+      "isDeityFolder": true,
+      "depth": 1
+    },
+    {
+      "name": "Self",
+      "fileCount": 1,
+      "subfolderCount": 0,
+      "isDeityFolder": true,
+      "depth": 1
+    },
+    {
+      "name": "KKSF",
+      "fileCount": 1,
+      "subfolderCount": 0,
+      "isDeityFolder": true,
+      "depth": 1
+    },
+    {
+      "name": "Namadwar",
+      "fileCount": 6,
+      "subfolderCount": 0,
+      "isDeityFolder": true,
+      "depth": 1
+    },
+    {
+      "name": "Bhajan Class 2024",
+      "fileCount": 14,
+      "subfolderCount": 0,
+      "isDeityFolder": true,
+      "depth": 1
+    },
+    {
+      "name": "Bhajan Class 2021",
+      "fileCount": 0,
+      "subfolderCount": 3,
+      "isDeityFolder": true,
+      "depth": 1
+    },
+    {
+      "name": "Lyrics",
+      "fileCount": 0,
+      "subfolderCount": 12,
+      "isDeityFolder": true,
+      "depth": 2
+    },
+    {
+      "name": "Krishna",
+      "fileCount": 3,
+      "subfolderCount": 0,
+      "isDeityFolder": true,
+      "depth": 3
+    },
+    {
+      "name": "Murugan",
+      "fileCount": 3,
+      "subfolderCount": 0,
+      "isDeityFolder": true,
+      "depth": 3
+    },
+    {
+      "name": "Ayyappan",
+      "fileCount": 4,
+      "subfolderCount": 0,
+      "isDeityFolder": true,
+      "depth": 3
+    },
+    {
+      "name": "Devi",
+      "fileCount": 4,
+      "subfolderCount": 0,
+      "isDeityFolder": true,
+      "depth": 3
+    },
+    {
+      "name": "Slokam",
+      "fileCount": 1,
+      "subfolderCount": 0,
+      "isDeityFolder": true,
+      "depth": 3
+    },
+    {
+      "name": "Rama",
+      "fileCount": 2,
+      "subfolderCount": 0,
+      "isDeityFolder": true,
+      "depth": 3
+    },
+    {
+      "name": "Hanuman",
+      "fileCount": 3,
+      "subfolderCount": 0,
+      "isDeityFolder": true,
+      "depth": 3
+    },
+    {
+      "name": "Narayana",
+      "fileCount": 3,
+      "subfolderCount": 0,
+      "isDeityFolder": true,
+      "depth": 3
+    },
+    {
+      "name": "Misc",
+      "fileCount": 2,
+      "subfolderCount": 0,
+      "isDeityFolder": true,
+      "depth": 3
+    },
+    {
+      "name": "Vinayaka",
+      "fileCount": 2,
+      "subfolderCount": 0,
+      "isDeityFolder": true,
+      "depth": 3
+    },
+    {
+      "name": "Guru",
+      "fileCount": 7,
+      "subfolderCount": 0,
+      "isDeityFolder": true,
+      "depth": 3
+    },
+    {
+      "name": "Sivan",
+      "fileCount": 7,
+      "subfolderCount": 0,
+      "isDeityFolder": true,
+      "depth": 3
+    },
+    {
+      "name": "Events",
+      "fileCount": 1,
+      "subfolderCount": 3,
+      "isDeityFolder": true,
+      "depth": 2
+    },
+    {
+      "name": "02-26-2021 Devi Pongala",
+      "fileCount": 10,
+      "subfolderCount": 0,
+      "isDeityFolder": true,
+      "depth": 3
+    },
+    {
+      "name": "Sankara-Jayanthi-Apr-2020",
+      "fileCount": 1,
+      "subfolderCount": 1,
+      "isDeityFolder": true,
+      "depth": 3
+    },
+    {
+      "name": "Tracks",
+      "fileCount": 0,
+      "subfolderCount": 1,
+      "isDeityFolder": true,
+      "depth": 4
+    },
+    {
+      "name": "Finished",
+      "fileCount": 2,
+      "subfolderCount": 0,
+      "isDeityFolder": true,
+      "depth": 5
+    },
+    {
+      "name": "MahaSivathriProgram-0222",
+      "fileCount": 1,
+      "subfolderCount": 0,
+      "isDeityFolder": true,
+      "depth": 3
+    },
+    {
+      "name": "Audio",
+      "fileCount": 20,
+      "subfolderCount": 0,
+      "isDeityFolder": true,
+      "depth": 2
+    },
+    {
+      "name": "Marriage songs",
+      "fileCount": 7,
+      "subfolderCount": 0,
+      "isDeityFolder": true,
+      "depth": 1
+    },
+    {
+      "name": "Thiruppugazh",
+      "fileCount": 2,
+      "subfolderCount": 0,
+      "isDeityFolder": true,
+      "depth": 1
+    },
+    {
+      "name": "Vinayaka",
+      "fileCount": 7,
+      "subfolderCount": 0,
+      "isDeityFolder": true,
+      "depth": 1
+    },
+    {
+      "name": "Siva",
+      "fileCount": 15,
+      "subfolderCount": 0,
+      "isDeityFolder": true,
+      "depth": 1
+    },
+    {
+      "name": "Hanuman",
+      "fileCount": 3,
+      "subfolderCount": 0,
+      "isDeityFolder": true,
+      "depth": 1
+    },
+    {
+      "name": "Lakshmi",
+      "fileCount": 1,
+      "subfolderCount": 0,
+      "isDeityFolder": true,
+      "depth": 1
+    },
+    {
+      "name": "Misc",
+      "fileCount": 5,
+      "subfolderCount": 0,
+      "isDeityFolder": true,
+      "depth": 1
+    },
+    {
+      "name": "Guru",
+      "fileCount": 19,
+      "subfolderCount": 0,
+      "isDeityFolder": true,
+      "depth": 1
+    },
+    {
+      "name": "Rama",
+      "fileCount": 3,
+      "subfolderCount": 0,
+      "isDeityFolder": true,
+      "depth": 1
+    },
+    {
+      "name": "Narayana",
+      "fileCount": 5,
+      "subfolderCount": 0,
+      "isDeityFolder": true,
+      "depth": 1
+    },
+    {
+      "name": "Krishna",
+      "fileCount": 14,
+      "subfolderCount": 0,
+      "isDeityFolder": true,
+      "depth": 1
+    },
+    {
+      "name": "Murugan",
+      "fileCount": 14,
+      "subfolderCount": 0,
+      "isDeityFolder": true,
+      "depth": 1
+    },
+    {
+      "name": "Ayyappa",
+      "fileCount": 34,
+      "subfolderCount": 1,
+      "isDeityFolder": true,
+      "depth": 1
+    },
+    {
+      "name": "sri hari hara bhajanAmrutham",
+      "fileCount": 16,
+      "subfolderCount": 0,
+      "isDeityFolder": true,
+      "depth": 2
+    },
+    {
+      "name": "Devi",
+      "fileCount": 20,
+      "subfolderCount": 0,
+      "isDeityFolder": true,
+      "depth": 1
+    },
+    {
+      "name": "AUDIO",
+      "fileCount": 4,
+      "subfolderCount": 1,
+      "isDeityFolder": true,
+      "depth": 1
+    },
+    {
+      "name": "drive-download-20250523T232910Z-1-001",
+      "fileCount": 21,
+      "subfolderCount": 0,
+      "isDeityFolder": true,
+      "depth": 2
+    }
+  ],
+  "fileTypes": {
+    "application/pdf": 59,
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": 8,
+    "application/vnd.google-apps.document": 188,
+    "application/vnd.google-apps.spreadsheet": 3,
+    "audio/mpeg": 31,
+    "video/mp4": 3,
+    "audio/x-m4a": 2,
+    "audio/mp4": 21
+  }
+}
