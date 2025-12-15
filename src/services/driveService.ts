@@ -60,10 +60,10 @@ export class DriveService {
   }
 
   /**
-   * Find the Namasankeerthanam folder
+   * Find a folder by name (generic method for multi-collection support)
    */
-  async findNamasankeerthanamFolder(): Promise<DriveFolder | null> {
-    const url = `${DRIVE_API_BASE}/files?q=name='Namasankeerthanam' and mimeType='application/vnd.google-apps.folder' and trashed=false&fields=files(id,name,modifiedTime)`
+  async findFolderByName(folderName: string): Promise<DriveFolder | null> {
+    const url = `${DRIVE_API_BASE}/files?q=name='${folderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false&fields=files(id,name,modifiedTime)`
     const response = await this.makeRequest(url)
     const data = await response.json()
     
@@ -76,6 +76,13 @@ export class DriveService {
     }
     
     return null
+  }
+
+  /**
+   * Find the Namasankeerthanam folder (legacy method, uses findFolderByName)
+   */
+  async findNamasankeerthanamFolder(): Promise<DriveFolder | null> {
+    return this.findFolderByName('Namasankeerthanam')
   }
 
   /**
@@ -136,6 +143,59 @@ export class DriveService {
     const url = `${DRIVE_API_BASE}/files/${fileId}?fields=id,name,mimeType,modifiedTime,size,parents`
     const response = await this.makeRequest(url)
     return await response.json()
+  }
+
+  /**
+   * Get image thumbnail URL
+   */
+  getImageThumbnailUrl(fileId: string, size: number = 500): string {
+    if (!this.accessToken) {
+      throw new Error('No access token available')
+    }
+    return `${DRIVE_API_BASE}/files/${fileId}?alt=media&access_token=${this.accessToken}`
+  }
+
+  /**
+   * Get full-size image URL
+   */
+  getImageUrl(fileId: string): string {
+    if (!this.accessToken) {
+      throw new Error('No access token available')
+    }
+    return `${DRIVE_API_BASE}/files/${fileId}?alt=media&access_token=${this.accessToken}`
+  }
+
+  /**
+   * Download image as blob
+   */
+  async downloadImageAsBlob(fileId: string): Promise<Blob> {
+    const url = `${DRIVE_API_BASE}/files/${fileId}?alt=media`
+    const response = await this.makeRequest(url)
+    return await response.blob()
+  }
+
+  /**
+   * Check if file is an image
+   */
+  isImageFile(mimeType: string): boolean {
+    return mimeType.startsWith('image/')
+  }
+
+  /**
+   * Check if file is a PDF
+   */
+  isPdfFile(mimeType: string): boolean {
+    return mimeType === 'application/pdf'
+  }
+
+  /**
+   * Get PDF URL
+   */
+  getPdfUrl(fileId: string): string {
+    if (!this.accessToken) {
+      throw new Error('No access token available')
+    }
+    return `${DRIVE_API_BASE}/files/${fileId}?alt=media&access_token=${this.accessToken}`
   }
 
   /**

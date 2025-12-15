@@ -1,12 +1,44 @@
-export interface Song {
+// Collection Types
+export type CollectionType = 'bhajana' | 'anusthanam'
+
+export interface Collection {
   id: string
+  type: CollectionType
+  name: string
+  nameDevanagari?: string
+  nameTamil?: string
+  icon: string
+  color: string
+  accentColor: string
+  driveFolderId: string
+  driveFolderPath: string
+  features: string[]
+  createdAt: string
+  lastSyncedAt?: string
+}
+
+export interface Category {
+  id: string
+  collectionId: string
+  name: string
+  driveFolderId: string
+  order: number
+  documentCount: number
+  icon?: string
+}
+
+// Document (formerly Song) - now collection-aware
+export interface Document {
+  id: string
+  collectionId: string
+  collectionType: CollectionType
   driveFileId: string
   name: string
-  deity: string
+  category: string // deity name, folder name, etc.
   contentType: 'text' | 'image' | 'pdf' | 'audio'
-  content?: string // For text songs
-  imageUrl?: string // For images
-  metadata?: SongMetadata
+  content?: string
+  imageUrl?: string
+  metadata?: DocumentMetadata
   modifiedTime: string
   cachedAt: string
   size: number
@@ -15,7 +47,10 @@ export interface Song {
   lastViewed: string | null
 }
 
-export interface SongMetadata {
+// Keep Song as alias for backward compatibility during migration
+export type Song = Document
+
+export interface DocumentMetadata {
   title?: string
   'title-tamil'?: string
   'title-sanskrit'?: string
@@ -30,7 +65,15 @@ export interface SongMetadata {
   source?: string
   type?: string // bhajan/ashtapathi/virutham/etc
   language?: string // tamil/telugu/malayalam/sanskrit
+  
+  // Anusthanam-specific metadata
+  duration?: number // minutes
+  materials?: string[] // checklist items
+  steps?: string[] // procedure steps
 }
+
+// Keep SongMetadata as alias for backward compatibility
+export type SongMetadata = DocumentMetadata
 
 export interface Deity {
   id: string
@@ -68,6 +111,27 @@ export type TitleLanguage = 'english' | 'tamil' | 'sanskrit'
 
 export interface ParsedContent {
   hasMetadata: boolean
-  metadata: SongMetadata
+  metadata: DocumentMetadata
   lyrics: string
+}
+
+// Collection Configuration Types
+export interface MetadataField {
+  key: string
+  label: string
+  type: 'text' | 'number' | 'select' | 'url' | 'array'
+}
+
+export interface CollectionConfig {
+  id: string
+  type: CollectionType
+  name: string
+  nameDevanagari?: string
+  nameTamil?: string
+  icon: string
+  color: string
+  accentColor: string
+  features: string[]
+  organizationTypes: string[]
+  metadataFields: MetadataField[]
 }

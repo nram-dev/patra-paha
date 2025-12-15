@@ -295,3 +295,5 @@ export default function Search({ isOpen, onClose, songs, onSongSelect }: SearchP
     </Modal>
   )
 }
+
+

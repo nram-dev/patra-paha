@@ -1,6 +1,7 @@
 import { Box, Flex, HStack, Text, IconButton, Button, Kbd, Menu, MenuButton, MenuList, MenuItem } from '@chakra-ui/react'
 import { useColorMode } from '@chakra-ui/react'
-import { MoonIcon, SunIcon, SearchIcon, ChevronDownIcon } from '@chakra-ui/icons'
+import { MoonIcon, SunIcon, SearchIcon, ChevronDownIcon, ArrowBackIcon } from '@chakra-ui/icons'
+import { useNavigate } from 'react-router-dom'
 import { TitleLanguage } from '../../types'
 
 interface HeaderProps {
@@ -8,10 +9,13 @@ interface HeaderProps {
   onSearchOpen: () => void
   language: TitleLanguage
   onLanguageChange: (language: TitleLanguage) => void
+  collectionName?: string
+  collectionIcon?: string
 }
 
-export default function Header({ onLogout, onSearchOpen, language, onLanguageChange }: HeaderProps) {
+export default function Header({ onLogout, onSearchOpen, language, onLanguageChange, collectionName, collectionIcon }: HeaderProps) {
   const { colorMode, toggleColorMode } = useColorMode()
+  const navigate = useNavigate()
 
   const languageLabels: Record<TitleLanguage, string> = {
     english: 'English',
@@ -30,12 +34,29 @@ export default function Header({ onLogout, onSearchOpen, language, onLanguageCha
     >
       <Flex justify="space-between" align="center">
         <HStack spacing={3}>
-          <Text fontSize="xl" fontWeight="bold">
-            🕉️ GAnAmruta Thuli
-          </Text>
-          <Text fontSize="sm" color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'} className="tamil-text">
-            கானாம்ருத துளி
-          </Text>
+          {collectionName ? (
+            <>
+              <IconButton
+                aria-label="Back to home"
+                icon={<ArrowBackIcon />}
+                size="sm"
+                variant="ghost"
+                onClick={() => navigate('/')}
+              />
+              <Text fontSize="xl" fontWeight="bold">
+                {collectionIcon} {collectionName}
+              </Text>
+            </>
+          ) : (
+            <>
+              <Text fontSize="xl" fontWeight="bold">
+                📄 PatraPaha
+              </Text>
+              <Text fontSize="sm" color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}>
+                पत्रपहा
+              </Text>
+            </>
+          )}
         </HStack>
 
         <HStack spacing={2}>

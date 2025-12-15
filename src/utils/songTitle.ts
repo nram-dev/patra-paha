@@ -43,3 +43,5 @@ export function getFirstLineAsTitle(content?: string): string | null {
   
   return firstLine.length > 0 && firstLine.length < 100 ? firstLine : null
 }
+
+
