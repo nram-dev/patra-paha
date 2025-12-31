@@ -359,7 +359,7 @@ function App() {
         <Box textAlign="center" p={8}>
           <Box fontSize="4xl" mb={4}>🕉️</Box>
           <Box fontSize="2xl" fontWeight="bold" mb={2} className="tamil-text">
-            GAnAmruta Thuli
+            PataPaha
           </Box>
           <Box fontSize="sm" color="calm.textSecondary" mb={6}>
             గానామృత துளி

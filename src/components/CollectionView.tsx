@@ -21,7 +21,7 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
   const { collectionId } = useParams<{ collectionId: string }>()
   const navigate = useNavigate()
   const toast = useToast()
-  const { collections } = useCollectionStore()
+  const { collections, setScanError, clearScanError } = useCollectionStore()
   
   const [deities, setDeities] = useState<Deity[]>([])
   const [selectedDeity, setSelectedDeity] = useState<Deity | null>(null)
@@ -85,6 +85,8 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
 
       try {
         setLoading(true)
+        // On a fresh load attempt, clear any previous error for this collection
+        clearScanError(collectionId)
         const cats = await db.categories
           .where('collectionId')
           .equals(collectionId)
@@ -102,6 +104,9 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
         setDeities(deityList)
       } catch (error) {
         console.error('Failed to load categories:', error)
+        if (collectionId) {
+          setScanError(collectionId, error)
+        }
       } finally {
         setLoading(false)
       }
@@ -156,6 +161,9 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
         setSongs(cachedDocs)
       } else {
         // Load from Drive if not cached
+        if (collectionId) {
+          clearScanError(collectionId)
+        }
         const files = await driveService.listFiles(deity.driveFolderId)
         
         const supportedFiles = files.filter(f => 
@@ -195,6 +203,9 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
       }
     } catch (error) {
       console.error('Failed to load documents:', error)
+      if (collectionId) {
+        setScanError(collectionId, error)
+      }
     } finally {
       setLoading(false)
     }

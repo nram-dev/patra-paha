@@ -122,7 +122,7 @@ function App() {
             पत्रपहा
           </Box>
           <Box fontSize="sm" color="calm.textSecondary" mb={6}>
-            View Your Spiritual Documents
+            View Your Documents
           </Box>
           <Box
             as="button"
@@ -137,9 +137,7 @@ function App() {
           >
             Sign in with Google
           </Box>
-          <Text fontSize="xs" color="gray.500" mt={4}>
-            Previously GAnAmruta Thuli
-          </Text>
+
         </Box>
       </Box>
     )

@@ -1,16 +1,34 @@
-import { Box, Heading, Text, SimpleGrid, Card, CardBody, VStack, HStack, Icon, Button } from '@chakra-ui/react'
+import { Box, Heading, Text, SimpleGrid, Card, CardBody, VStack, HStack, Icon, Button, Spinner } from '@chakra-ui/react'
 import { AddIcon } from '@chakra-ui/icons'
 import { useNavigate } from 'react-router-dom'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useCollectionStore } from '../stores/collectionStore'
+import { scanCollection } from '../services/scanService'
 
 export const CollectionSelector = () => {
   const navigate = useNavigate()
-  const { collections, documentCounts, loadCollections } = useCollectionStore()
+  const { collections, documentCounts, loadCollections, scanErrors, setScanError, clearScanError, refreshDocumentCounts } = useCollectionStore()
+  const [scanning, setScanning] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
     loadCollections()
   }, [loadCollections])
+
+  const handleScanNow = async (collectionId: string) => {
+    const collection = collections.find(c => c.id === collectionId)
+    if (!collection) return
+    setScanning(prev => ({ ...prev, [collectionId]: true }))
+    clearScanError(collectionId)
+    try {
+      await scanCollection(collection)
+      // refresh counts so tile updates immediately
+      await refreshDocumentCounts()
+    } catch (err) {
+      setScanError(collectionId, err)
+    } finally {
+      setScanning(prev => ({ ...prev, [collectionId]: false }))
+    }
+  }
 
   return (
     <Box p={8} bg="calm.background" minH="100vh">
@@ -25,7 +43,7 @@ export const CollectionSelector = () => {
             पत्रपहा
           </Text>
           <Text fontSize="md" color="calm.textSecondary">
-            View Your Spiritual Documents
+            View Your Documents
           </Text>
         </Box>
 
@@ -62,6 +80,12 @@ export const CollectionSelector = () => {
                           {collection.nameDevanagari || collection.nameTamil}
                         </Text>
                       )}
+                      {/* Drive folder path for troubleshooting */}
+                      {collection.driveFolderPath && (
+                        <Text fontSize="xs" color="gray.500">
+                          {collection.driveFolderPath}
+                        </Text>
+                      )}
                       <HStack spacing={2}>
                         <Text fontSize="sm" color="gray.500" fontWeight="medium">
                           {documentCounts[collection.id] || 0}
@@ -70,6 +94,29 @@ export const CollectionSelector = () => {
                           documents
                         </Text>
                       </HStack>
+                      <HStack spacing={3}>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={(e) => { e.stopPropagation(); handleScanNow(collection.id) }}
+                          isDisabled={!!scanning[collection.id]}
+                        >
+                          {scanning[collection.id] ? (
+                            <HStack spacing={2}>
+                              <Spinner size="xs" />
+                              <Text>Scanning…</Text>
+                            </HStack>
+                          ) : (
+                            'Scan now'
+                          )}
+                        </Button>
+                      </HStack>
+                      {/* Scan error, if any */}
+                      {scanErrors[collection.id] && (
+                        <Text fontSize="xs" color="red.600">
+                          {scanErrors[collection.id]}
+                        </Text>
+                      )}
                     </VStack>
                   </CardBody>
                 </Card>
@@ -125,9 +172,7 @@ export const CollectionSelector = () => {
 
         {/* Footer Note */}
         <Box textAlign="center" pt={8} pb={4}>
-          <Text fontSize="sm" color="gray.500">
-            Previously <strong>GAnAmruta Thuli</strong> • Now expanded for all spiritual documents
-          </Text>
+
         </Box>
       </VStack>
     </Box>

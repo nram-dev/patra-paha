@@ -1,10 +1,10 @@
-# GAnAmruta Thuli (GT)
+# Patra Paha
 
 Personal PWA for managing devotional song lyrics from Google Drive.
 
 ## Project Overview
 
-**GAnAmruta Thuli** (கானாம்ருத துளி) is a Progressive Web App that displays devotional songs (bhajans) from your Google Drive, organized by deity folders with customizable seasonal ordering.
+**Patra Paha** is a Progressive Web App that displays devotional songs (bhajans) from your Google Drive, organized by deity folders with customizable seasonal ordering.
 
 ## Features
 
@@ -42,7 +42,7 @@ npm install
 ### 3. Google Cloud Console Setup
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com)
-2. Create a new project: "GAnAmruta Thuli"
+2. Create a new project: "PatraPaha"
 3. Enable **Google Drive API**
 4. Configure OAuth Consent Screen:
    - Application type: Web application

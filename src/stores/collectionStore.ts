@@ -6,6 +6,7 @@ interface CollectionState {
   collections: Collection[]
   activeCollectionId: string | null
   documentCounts: Record<string, number>
+  scanErrors: Record<string, string | null>
   
   // Actions
   loadCollections: () => Promise<void>
@@ -14,12 +15,15 @@ interface CollectionState {
   updateCollection: (id: string, updates: Partial<Collection>) => Promise<void>
   deleteCollection: (id: string) => Promise<void>
   refreshDocumentCounts: () => Promise<void>
+  setScanError: (id: string, error: unknown) => void
+  clearScanError: (id: string) => void
 }
 
 export const useCollectionStore = create<CollectionState>((set, get) => ({
   collections: [],
   activeCollectionId: null,
   documentCounts: {},
+  scanErrors: {},
 
   loadCollections: async () => {
     try {
@@ -84,5 +88,28 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
     } catch (error) {
       console.error('Failed to refresh document counts:', error)
     }
-  }
+  },
+
+  setScanError: (id: string, error: unknown) => {
+    const message =
+      error instanceof Error
+        ? error.message
+        : typeof error === 'string'
+        ? error
+        : 'Unknown error'
+    set(state => ({
+      scanErrors: {
+        ...state.scanErrors,
+        [id]: message,
+      },
+    }))
+  },
+
+  clearScanError: (id: string) => {
+    set(state => {
+      const next = { ...state.scanErrors }
+      delete next[id]
+      return { scanErrors: next }
+    })
+  },
 }))

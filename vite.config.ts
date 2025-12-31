@@ -13,8 +13,8 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg}']
       },
       manifest: {
-        name: 'GAnAmruta Thuli',
-        short_name: 'GT',
+        name: 'PatraPaha',
+        short_name: 'PP',
         description: 'Your collection of devotional songs - drops of musical nectar',
         theme_color: '#FF9933',
         background_color: '#F5F5DC',
