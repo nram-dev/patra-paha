@@ -1,3 +1,5 @@
+import { MultiLanguageContent } from '../types'
+
 /**
  * HTML content normalizer for Google Docs export
  * Preserves: Font families, font sizes, bold/italic, structure
@@ -79,8 +81,24 @@ function normalizeFonts(element: HTMLElement): void {
 }
 
 function normalizeStyling(element: HTMLElement, theme: 'calm' | 'dark'): void {
-  // Preserve bold, italic, font sizes
-  // Remove other color-related styles that might conflict with theme
+  // Preserve bold and italic.
+  // Remove inline font sizes so app-level controls can take effect.
+  // Also clean any 'font-size' declarations inside style attributes.
+  if (element.style.fontSize) {
+    element.style.fontSize = ''
+  }
+  const styleAttr = element.getAttribute('style')
+  if (styleAttr && /font-size\s*:/.test(styleAttr)) {
+    const cleaned = styleAttr
+      .split(';')
+      .filter(prop => !/^\s*font-size\s*:/i.test(prop))
+      .join(';')
+    if (cleaned.trim()) {
+      element.setAttribute('style', cleaned)
+    } else {
+      element.removeAttribute('style')
+    }
+  }
 
   // Recursively process children
   Array.from(element.children).forEach(child => {
@@ -117,4 +135,21 @@ export function extractImageUrls(html: string): string[] {
   const doc = parser.parseFromString(html, 'text/html')
   const images = doc.querySelectorAll('img')
   return Array.from(images).map(img => img.getAttribute('src') || '').filter(Boolean)
+}
+
+/**
+ * Normalize multi-language content structure
+ * Normalizes each language section independently
+ */
+export function normalizeMultiLanguageContent(
+  content: MultiLanguageContent,
+  theme: 'calm' | 'dark' = 'calm'
+): MultiLanguageContent {
+  const normalized: MultiLanguageContent = {}
+  
+  for (const [language, html] of Object.entries(content)) {
+    normalized[language] = normalizeHtmlContent(html, theme)
+  }
+  
+  return normalized
 }

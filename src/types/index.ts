@@ -35,8 +35,9 @@ export interface Document {
   driveFileId: string
   name: string
   category: string // deity name, folder name, etc.
+  language: TitleLanguage
   contentType: 'text' | 'image' | 'pdf' | 'audio'
-  content?: string
+  content?: string | MultiLanguageContent
   imageUrl?: string
   metadata?: DocumentMetadata
   modifiedTime: string
@@ -45,6 +46,10 @@ export interface Document {
   isFavorite: boolean
   viewCount: number
   lastViewed: string | null
+  availableLanguages?: string[] // Languages available in multi-language content
+  songId?: string // Optional: extracted from filename (e.g., G001)
+  languageTitles?: { [language: string]: string } // Language-specific titles from __TIT markers
+  languageMetadata?: { [language: string]: LanguageMetadata } // Language-specific metadata (__RAG, __TAL, etc.)
 }
 
 // Keep Song as alias for backward compatibility during migration
@@ -58,6 +63,7 @@ export interface DocumentMetadata {
   'title-telugu'?: string
   ragam?: string
   talam?: string
+  composer?: string
   tags?: string[]
   deity?: string[]
   youtube?: string
@@ -70,6 +76,15 @@ export interface DocumentMetadata {
   duration?: number // minutes
   materials?: string[] // checklist items
   steps?: string[] // procedure steps
+}
+
+// Language-specific metadata extracted from __TIT, __RAG, __TAL, etc.
+export interface LanguageMetadata {
+  title?: string // from __TIT
+  ragam?: string // from __RAG
+  talam?: string // from __TAL
+  composer?: string // from __COM or other tags
+  [key: string]: string | undefined // for other custom tags
 }
 
 // Keep SongMetadata as alias for backward compatibility
@@ -113,6 +128,11 @@ export interface ParsedContent {
   hasMetadata: boolean
   metadata: DocumentMetadata
   lyrics: string
+}
+
+// Multi-language content structure
+export type MultiLanguageContent = {
+  [language: string]: string // language keys: 'english', 'sanskrit', 'tamil'
 }
 
 // Collection Configuration Types

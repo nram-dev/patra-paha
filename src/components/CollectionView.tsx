@@ -12,6 +12,8 @@ import Search from './Search'
 import { Deity, Song, TitleLanguage, Document, Category } from '../types'
 import { useCollectionStore } from '../stores/collectionStore'
 import { getCollectionConfig } from '../config/collections'
+import { parseMultiLanguageContent } from '../services/metadataParser'
+import { extractSongId } from '../utils/songId'
 
 interface CollectionViewProps {
   onLogout: () => void
@@ -143,14 +145,21 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
 
-  const handleDeitySelect = async (deity: Deity) => {
+  const handleDeitySelect = async (deity: Deity, languageOverride?: TitleLanguage) => {
     setSelectedDeity(deity)
     setSelectedSong(null)
     setShowingFavorites(false)
     
     try {
       setLoading(true)
-      // Load documents from this category
+      if (collectionId) {
+        clearScanError(collectionId)
+      }
+      
+      // Always load from root deity folder (not language subfolders)
+      const targetFolderId = deity.driveFolderId
+      
+      // Check cache first
       const cachedDocs = await db.documents
         .where('collectionId')
         .equals(collectionId!)
@@ -159,48 +168,52 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
       
       if (cachedDocs.length > 0) {
         setSongs(cachedDocs)
-      } else {
-        // Load from Drive if not cached
-        if (collectionId) {
-          clearScanError(collectionId)
-        }
-        const files = await driveService.listFiles(deity.driveFolderId)
-        
-        const supportedFiles = files.filter(f => 
-          f.mimeType === 'application/vnd.google-apps.document' ||
-          driveService.isImageFile(f.mimeType) ||
-          driveService.isPdfFile(f.mimeType)
-        )
-        
-        const docList: Document[] = supportedFiles.map(file => {
-          const isImage = driveService.isImageFile(file.mimeType)
-          const isPdf = driveService.isPdfFile(file.mimeType)
-          
-          let contentType: 'text' | 'image' | 'pdf' | 'audio' = 'text'
-          if (isImage) contentType = 'image'
-          else if (isPdf) contentType = 'pdf'
-          
-          return {
-            id: file.id,
-            collectionId: collectionId!,
-            collectionType: collection!.type,
-            driveFileId: file.id,
-            name: file.name,
-            category: deity.name,
-            contentType,
-            imageUrl: isImage ? driveService.getImageUrl(file.id) : isPdf ? driveService.getPdfUrl(file.id) : undefined,
-            modifiedTime: file.modifiedTime,
-            cachedAt: new Date().toISOString(),
-            size: parseInt(file.size || '0', 10),
-            isFavorite: false,
-            viewCount: 0,
-            lastViewed: null,
-          }
-        })
-        
-        setSongs(docList)
-        await db.documents.bulkPut(docList)
+        setLoading(false)
+        return
       }
+      
+      // Load from Drive root folder
+      const files = await driveService.listFiles(targetFolderId)
+        
+      const supportedFiles = files.filter(f => 
+        f.mimeType === 'application/vnd.google-apps.document' ||
+        driveService.isImageFile(f.mimeType) ||
+        driveService.isPdfFile(f.mimeType)
+      )
+      
+      const docList: Document[] = supportedFiles.map(file => {
+        const isImage = driveService.isImageFile(file.mimeType)
+        const isPdf = driveService.isPdfFile(file.mimeType)
+        
+        let contentType: 'text' | 'image' | 'pdf' | 'audio' = 'text'
+        if (isImage) contentType = 'image'
+        else if (isPdf) contentType = 'pdf'
+        
+        // Extract optional song ID from filename
+        const songId = extractSongId(file.name)
+        
+        return {
+          id: file.id,
+          collectionId: collectionId!,
+          collectionType: collection!.type,
+          driveFileId: file.id,
+          name: file.name,
+          category: deity.name,
+          language: 'english', // Default, will be determined when content is parsed
+          contentType,
+          imageUrl: isImage ? driveService.getImageUrl(file.id) : isPdf ? driveService.getPdfUrl(file.id) : undefined,
+          modifiedTime: file.modifiedTime,
+          cachedAt: new Date().toISOString(),
+          size: parseInt(file.size || '0', 10),
+          isFavorite: false,
+          viewCount: 0,
+          lastViewed: null,
+          songId: songId || undefined,
+        }
+      })
+      
+      setSongs(docList)
+      await db.documents.bulkPut(docList)
     } catch (error) {
       console.error('Failed to load documents:', error)
       if (collectionId) {
@@ -261,9 +274,36 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
         setLoading(true)
         const html = await driveService.exportAsHtml(song.driveFileId)
         
+        // Parse multi-language content
+        const parsed = parseMultiLanguageContent(html)
+        
+        console.log('Parsed multi-language content:', {
+          availableLanguages: parsed.availableLanguages,
+          languageCount: parsed.availableLanguages.length,
+          languages: Object.keys(parsed.languages),
+        })
+        
+        // If multi-language content detected, store it as MultiLanguageContent
+        // Otherwise, store as single string (backward compatible)
+        const isMultiLang = parsed.availableLanguages.length > 1
+        const content = isMultiLang 
+          ? parsed.languages 
+          : parsed.languages[parsed.availableLanguages[0] || 'english'] || html
+        
+        console.log('Storing content:', {
+          isMultiLang,
+          contentType: typeof content,
+          contentKeys: typeof content === 'object' ? Object.keys(content) : 'string',
+          availableLanguages: isMultiLang ? parsed.availableLanguages : undefined,
+        })
+        
         const updatedSong = {
           ...updatedViewData,
-          content: html,
+          content,
+          metadata: parsed.metadata || updatedViewData.metadata,
+          availableLanguages: isMultiLang ? parsed.availableLanguages : undefined,
+          languageTitles: parsed.languageTitles,
+          languageMetadata: parsed.languageMetadata,
           cachedAt: new Date().toISOString(),
         }
         
@@ -273,6 +313,41 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
         console.error('Failed to load document content:', error)
       } finally {
         setLoading(false)
+      }
+    } else if (song.content && typeof song.content === 'string' && song.contentType === 'text') {
+      // Re-parse cached content to check if it's multi-language
+      // This handles the case where content was cached before multi-language support
+      try {
+        const parsed = parseMultiLanguageContent(song.content)
+        const isMultiLang = parsed.availableLanguages.length > 1
+        
+        console.log('Re-parsing cached content:', {
+          isMultiLang,
+          availableLanguages: parsed.availableLanguages,
+          currentAvailableLanguages: song.availableLanguages,
+        })
+        
+        if (isMultiLang) {
+          // Update the song with multi-language structure
+          const updatedSong = {
+            ...updatedViewData,
+            content: parsed.languages,
+            metadata: parsed.metadata || song.metadata,
+            availableLanguages: parsed.availableLanguages,
+            languageTitles: parsed.languageTitles,
+            languageMetadata: parsed.languageMetadata,
+          }
+          
+          console.log('Updating cached song to multi-language:', {
+            contentKeys: Object.keys(parsed.languages),
+            availableLanguages: parsed.availableLanguages,
+          })
+          
+          setSelectedSong(updatedSong)
+          await db.documents.put(updatedSong)
+        }
+      } catch (error) {
+        console.error('Failed to re-parse cached content:', error)
       }
     }
   }
@@ -314,6 +389,8 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
         },
       })
     }
+    // Language change now only affects title display, not document loading
+    // All languages are in the same document, so no need to reload
   }
 
   const toggleColumn1 = () => {

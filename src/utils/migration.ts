@@ -60,6 +60,7 @@ export async function migrateToMultiCollection(): Promise<boolean> {
         collectionId: 'bhajana-default',
         collectionType: 'bhajana' as const,
         category: song.deity, // deity becomes category
+        language: 'english',
       }))
 
       await db.documents.bulkPut(documents)

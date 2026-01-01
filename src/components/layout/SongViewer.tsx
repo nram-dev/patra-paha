@@ -1,11 +1,12 @@
-import { Box, Heading, VStack, Text, Spinner, HStack, IconButton, Image, Button } from '@chakra-ui/react'
+import { Box, Heading, VStack, Text, Spinner, HStack, IconButton, Image, Button, Tabs, TabList, Tab, Table, Thead, Tbody, Tr, Th, Td } from '@chakra-ui/react'
 import { useColorMode } from '@chakra-ui/react'
 import { AddIcon, MinusIcon, DownloadIcon, ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons'
-import { Song } from '../../types'
+import { Song, MultiLanguageContent } from '../../types'
 import { parseMetadata } from '../../services/metadataParser'
 import { normalizeHtmlContent } from '../../services/contentNormalizer'
-import { useState } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Document, Page, pdfjs } from 'react-pdf'
+import { db } from '../../db/database'
 import 'react-pdf/dist/Page/AnnotationLayer.css'
 import 'react-pdf/dist/Page/TextLayer.css'
 
@@ -24,6 +25,84 @@ export default function SongViewer({ song, loading }: SongViewerProps) {
   const [pdfNumPages, setPdfNumPages] = useState<number | null>(null)
   const [pdfPageNumber, setPdfPageNumber] = useState(1)
   const [pdfScale, setPdfScale] = useState(1.0)
+  const [selectedLanguage, setSelectedLanguage] = useState<string>('english')
+
+  // Check if content is multi-language
+  const isMultiLanguage = useMemo(() => {
+    if (!song?.content) return false
+    // Check if it's an object (MultiLanguageContent) and not an array
+    if (typeof song.content === 'object' && !Array.isArray(song.content)) {
+      // Verify it has language keys (not just metadata)
+      const keys = Object.keys(song.content)
+      const hasLanguageKeys = keys.some(key => ['english', 'sanskrit', 'tamil'].includes(key))
+      if (hasLanguageKeys) {
+        console.log('Multi-language detected:', keys, 'Available languages:', song.availableLanguages)
+      }
+      return hasLanguageKeys
+    }
+    return false
+  }, [song?.content, song?.availableLanguages])
+
+  const availableLanguages = useMemo(() => {
+    if (isMultiLanguage && song?.content && typeof song.content === 'object' && !Array.isArray(song.content)) {
+      const multiContent = song.content as MultiLanguageContent
+      // Only include languages that actually have content (non-empty strings)
+      const languagesWithContent = (song.availableLanguages || Object.keys(multiContent)).filter(lang => {
+        const content = multiContent[lang]
+        return content && typeof content === 'string' && content.trim().length > 0
+      })
+      return languagesWithContent.length > 0 ? languagesWithContent : ['english']
+    }
+    return ['english']
+  }, [isMultiLanguage, song?.availableLanguages, song?.content])
+
+  // Initialize selected language based on user preference or first available
+  // Also ensure selected language has content
+  useEffect(() => {
+    if (isMultiLanguage && availableLanguages.length > 0) {
+      const loadUserLanguage = async () => {
+        try {
+          const settings = await db.settings.get('app')
+          const userLanguage = settings?.language || 'english'
+          
+          // If user's preferred language is available and has content, use it; otherwise use first available
+          if (availableLanguages.includes(userLanguage)) {
+            setSelectedLanguage(userLanguage)
+          } else {
+            setSelectedLanguage(availableLanguages[0])
+          }
+        } catch (error) {
+          // Fallback to first available language
+          setSelectedLanguage(availableLanguages[0])
+        }
+      }
+      loadUserLanguage()
+    } else {
+      setSelectedLanguage('english')
+    }
+  }, [isMultiLanguage, availableLanguages])
+  
+  // Ensure selected language has content - if not, switch to first available
+  useEffect(() => {
+    if (isMultiLanguage && availableLanguages.length > 0 && !availableLanguages.includes(selectedLanguage)) {
+      setSelectedLanguage(availableLanguages[0])
+    }
+  }, [isMultiLanguage, availableLanguages, selectedLanguage])
+
+  // Get current language content
+  const currentLanguageContent = useMemo(() => {
+    if (!song?.content) return ''
+    
+    if (isMultiLanguage) {
+      const multiContent = song.content as MultiLanguageContent
+      const content = multiContent[selectedLanguage] || multiContent[availableLanguages[0]] || ''
+      // Ensure it's a string
+      return typeof content === 'string' ? content : ''
+    }
+    
+    // Single language content should be a string
+    return typeof song.content === 'string' ? song.content : ''
+  }, [song?.content, isMultiLanguage, selectedLanguage, availableLanguages])
 
   if (!song) {
     return (
@@ -272,9 +351,27 @@ export default function SongViewer({ song, loading }: SongViewerProps) {
   }
 
   // Parse metadata and content for text songs
-  const rawContent = song.content || ''
-  const { metadata, lyrics } = parseMetadata(rawContent)
+  // currentLanguageContent is already a string (extracted from MultiLanguageContent if needed)
+  const rawContent = typeof currentLanguageContent === 'string' ? currentLanguageContent : ''
+  
+  // For multi-language content, metadata is already extracted, so just get lyrics
+  // For single-language content, parse metadata
+  let lyrics = rawContent
+  let parsedMetadata = song?.metadata || {}
+  if (!isMultiLanguage) {
+    const parsed = parseMetadata(rawContent)
+    lyrics = parsed.lyrics
+    parsedMetadata = parsed.metadata || parsedMetadata
+  }
+  
   const normalizedHtml = normalizeHtmlContent(lyrics, colorMode === 'dark' ? 'dark' : 'calm')
+
+  // Language label mapping (in native scripts)
+  const languageLabels: Record<string, string> = {
+    english: 'English',
+    sanskrit: 'संस्कृतम्',
+    tamil: 'தமிழ்',
+  }
 
   const fontSizes = {
     small: '18px',
@@ -291,46 +388,110 @@ export default function SongViewer({ song, loading }: SongViewerProps) {
       overflowY="auto"
     >
       <Box maxW="800px" mx="auto" p={8}>
-        {/* Title */}
+        {/* Language Tabs (only show if multi-language) */}
+        {isMultiLanguage && availableLanguages.length > 1 && (
+          <Tabs
+            index={availableLanguages.indexOf(selectedLanguage)}
+            onChange={(index) => setSelectedLanguage(availableLanguages[index])}
+            mb={6}
+          >
+            <TabList>
+              {availableLanguages.map((lang) => (
+                <Tab
+                  key={lang}
+                  fontSize="sm"
+                  fontWeight="medium"
+                  _selected={{
+                    color: colorMode === 'dark' ? 'dark.accent' : 'calm.accent',
+                    borderBottomColor: colorMode === 'dark' ? 'dark.accent' : 'calm.accent',
+                  }}
+                >
+                  {languageLabels[lang] || lang.toUpperCase()}
+                </Tab>
+              ))}
+            </TabList>
+          </Tabs>
+        )}
+
+        {/* Title - use language-specific title from __TIT if available */}
         <Heading
           size="lg"
           mb={4}
           color={colorMode === 'dark' ? 'dark.textPrimary' : 'calm.textPrimary'}
         >
-          {metadata.title || song.name}
+          {song.languageMetadata?.[selectedLanguage]?.title || song.languageTitles?.[selectedLanguage] || song.metadata?.title || parsedMetadata?.title || song.name}
         </Heading>
 
-        {/* Metadata if present */}
-        {metadata.ragam && (
-          <VStack
-            align="start"
+        {/* Metadata table - use language-specific metadata from __RAG, __TAL, etc. */}
+        {(song.languageMetadata?.[selectedLanguage] || song.metadata || parsedMetadata?.ragam) && (
+          <Box
             bg={colorMode === 'dark' ? 'dark.surface' : 'calm.surface'}
             p={4}
             borderRadius="md"
             mb={6}
-            spacing={2}
           >
-            {metadata.ragam && (
+            <Table variant="simple" size="sm">
+              <Tbody>
+                {/* Title (from __TIT) */}
+                {(song.languageMetadata?.[selectedLanguage]?.title) && (
+                  <Tr>
+                    <Th width="120px" color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}>
+                      Title
+                    </Th>
+                    <Td color={colorMode === 'dark' ? 'dark.textPrimary' : 'calm.textPrimary'}>
+                      {song.languageMetadata[selectedLanguage].title}
+                    </Td>
+                  </Tr>
+                )}
+                {/* Raga */}
+                {(song.languageMetadata?.[selectedLanguage]?.ragam || song.metadata?.ragam || parsedMetadata?.ragam) && (
+                  <Tr>
+                    <Th width="120px" color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}>
+                      Raga
+                    </Th>
+                    <Td color={colorMode === 'dark' ? 'dark.textPrimary' : 'calm.textPrimary'}>
+                      {song.languageMetadata?.[selectedLanguage]?.ragam || song.metadata?.ragam || parsedMetadata?.ragam}
+                    </Td>
+                  </Tr>
+                )}
+                {/* Talam */}
+                {(song.languageMetadata?.[selectedLanguage]?.talam || song.metadata?.talam || parsedMetadata?.talam) && (
+                  <Tr>
+                    <Th width="120px" color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}>
+                      Talam
+                    </Th>
+                    <Td color={colorMode === 'dark' ? 'dark.textPrimary' : 'calm.textPrimary'}>
+                      {song.languageMetadata?.[selectedLanguage]?.talam || song.metadata?.talam || parsedMetadata?.talam}
+                    </Td>
+                  </Tr>
+                )}
+                {/* Composer */}
+                {(song.languageMetadata?.[selectedLanguage]?.composer || song.metadata?.composer) && (
+                  <Tr>
+                    <Th width="120px" color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}>
+                      Composer
+                    </Th>
+                    <Td color={colorMode === 'dark' ? 'dark.textPrimary' : 'calm.textPrimary'}>
+                      {song.languageMetadata?.[selectedLanguage]?.composer || song.metadata?.composer}
+                    </Td>
+                  </Tr>
+                )}
+              </Tbody>
+            </Table>
+            
+            {/* Other metadata (tags, YouTube, etc.) */}
+            <VStack align="start" spacing={2} mt={4}>
+            {((song.metadata?.tags && song.metadata.tags?.length > 0) || (parsedMetadata?.tags && parsedMetadata.tags.length > 0)) && (
               <Text fontSize="sm">
-                <strong>Ragam:</strong> {metadata.ragam}
+                <strong>Tags:</strong> {(song.metadata?.tags || parsedMetadata?.tags)?.join(', ')}
               </Text>
             )}
-            {metadata.talam && (
-              <Text fontSize="sm">
-                <strong>Talam:</strong> {metadata.talam}
-              </Text>
-            )}
-            {metadata.tags && metadata.tags.length > 0 && (
-              <Text fontSize="sm">
-                <strong>Tags:</strong> {metadata.tags.join(', ')}
-              </Text>
-            )}
-            {metadata.youtube && (
+            {(song.metadata?.youtube || parsedMetadata?.youtube) && (
               <Text fontSize="sm">
                 <strong>YouTube:</strong>{' '}
                 <Text
                   as="a"
-                  href={metadata.youtube}
+                  href={song.metadata?.youtube || parsedMetadata?.youtube}
                   target="_blank"
                   rel="noopener noreferrer"
                   color={colorMode === 'dark' ? 'dark.accent' : 'calm.accent'}
@@ -340,12 +501,12 @@ export default function SongViewer({ song, loading }: SongViewerProps) {
                 </Text>
               </Text>
             )}
-            {metadata.spotify && (
+            {(song.metadata?.spotify || parsedMetadata?.spotify) && (
               <Text fontSize="sm">
                 <strong>Spotify:</strong>{' '}
                 <Text
                   as="a"
-                  href={metadata.spotify}
+                  href={song.metadata?.spotify || parsedMetadata?.spotify}
                   target="_blank"
                   rel="noopener noreferrer"
                   color={colorMode === 'dark' ? 'dark.accent' : 'calm.accent'}
@@ -355,12 +516,13 @@ export default function SongViewer({ song, loading }: SongViewerProps) {
                 </Text>
               </Text>
             )}
-            {metadata.source && (
+            {(song.metadata?.source || parsedMetadata?.source) && (
               <Text fontSize="sm">
-                <strong>Source:</strong> {metadata.source}
+                <strong>Source:</strong> {song.metadata?.source || parsedMetadata?.source}
               </Text>
             )}
-          </VStack>
+            </VStack>
+          </Box>
         )}
 
         {/* Font size controls */}

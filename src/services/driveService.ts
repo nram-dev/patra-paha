@@ -60,6 +60,23 @@ export class DriveService {
   }
 
   /**
+   * Find a direct child subfolder by exact name under a parent folder
+   */
+  async findSubfolderByName(parentId: string, subfolderName: string): Promise<DriveFolder | null> {
+    const url = `${DRIVE_API_BASE}/files?q='${parentId}' in parents and name='${subfolderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false&fields=files(id,name,modifiedTime)`
+    const response = await this.makeRequest(url)
+    const data = await response.json()
+    if (data.files && data.files.length > 0) {
+      return {
+        id: data.files[0].id,
+        name: data.files[0].name,
+        modifiedTime: data.files[0].modifiedTime,
+      }
+    }
+    return null
+  }
+
+  /**
    * Find a folder by name (generic method for multi-collection support)
    */
   async findFolderByName(folderName: string): Promise<DriveFolder | null> {

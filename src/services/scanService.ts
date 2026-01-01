@@ -1,6 +1,7 @@
 import { db } from '../db/database'
 import { driveService } from './driveService'
 import { Category, Collection, Document } from '../types'
+import { extractSongId } from '../utils/songId'
 
 /**
  * Scan a collection's Drive folder to discover categories (subfolders)
@@ -36,6 +37,12 @@ export async function scanCollection(collection: Collection): Promise<void> {
 
   for (let index = 0; index < filteredFolders.length; index++) {
     const folder = filteredFolders[index]
+    // Scan root folder only (not language subfolders like ENG/TAM/SAN)
+    // Skip language subfolders
+    if (folder.name === 'ENG' || folder.name === 'TAM' || folder.name === 'SAN') {
+      continue
+    }
+    
     // Count supported files
     const files = await driveService.listFiles(folder.id)
     const supported = files.filter(
@@ -62,6 +69,9 @@ export async function scanCollection(collection: Collection): Promise<void> {
       if (isImage) contentType = 'image'
       else if (isPdf) contentType = 'pdf'
 
+      // Extract optional song ID from filename
+      const songId = extractSongId(file.name)
+
       documentsToUpsert.push({
         id: file.id,
         collectionId: collection.id,
@@ -69,6 +79,7 @@ export async function scanCollection(collection: Collection): Promise<void> {
         driveFileId: file.id,
         name: file.name,
         category: folder.name,
+        language: 'english', // Default, will be determined when content is parsed
         contentType,
         imageUrl: isImage
           ? driveService.getImageUrl(file.id)
@@ -81,6 +92,7 @@ export async function scanCollection(collection: Collection): Promise<void> {
         isFavorite: false,
         viewCount: 0,
         lastViewed: null,
+        songId: songId || undefined,
       })
     }
   }
