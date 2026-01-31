@@ -8,10 +8,59 @@ export const CUSTOM_COLORS = [
   { name: 'Purple', color: '#8B5CF6', accent: '#7C3AED' },
   { name: 'Pink', color: '#EC4899', accent: '#DB2777' },
   { name: 'Teal', color: '#14B8A6', accent: '#0D9488' },
+  { name: 'Orange', color: '#FF9933', accent: '#E68A2E' },
+  { name: 'Red', color: '#DC2626', accent: '#B91C1C' },
+  { name: 'Amber', color: '#F59E0B', accent: '#D97706' },
+  { name: 'Maroon', color: '#9B1B30', accent: '#7D1526' },
 ]
 
 // Icon options for custom collections
-export const CUSTOM_ICONS = ['📁', '📚', '📖', '🎵', '🙏', '📝', '🎨', '⭐', '💼']
+export const CUSTOM_ICONS = ['📁', '📚', '📖', '🎵', '🙏', '📝', '🎨', '⭐', '💼', '🕉️', '📜']
+
+// Predefined collection presets with icon and color
+export interface PredefinedPreset {
+  id: string
+  name: string
+  icon: string
+  color: { name: string; color: string; accent: string }
+  defaultFolderName: string
+  configKey: string
+}
+
+export const PREDEFINED_PRESETS: PredefinedPreset[] = [
+  {
+    id: 'music',
+    name: 'Music',
+    icon: '🎵',
+    color: { name: 'Orange', color: '#FF9933', accent: '#E68A2E' },
+    defaultFolderName: 'Music',
+    configKey: 'bhajana',
+  },
+  {
+    id: 'namasankeerthanam',
+    name: 'Namasankeerthanam',
+    icon: '🙏',
+    color: { name: 'Amber', color: '#F59E0B', accent: '#D97706' },
+    defaultFolderName: 'Namasankeerthanam',
+    configKey: 'bhajana',
+  },
+  {
+    id: 'anushtanam',
+    name: 'Anushtanam',
+    icon: '🕉️',
+    color: { name: 'Red', color: '#DC2626', accent: '#B91C1C' },
+    defaultFolderName: 'Anushtanam',
+    configKey: 'anusthanam',
+  },
+  {
+    id: 'veda',
+    name: 'Veda',
+    icon: '📜',
+    color: { name: 'Maroon', color: '#9B1B30', accent: '#7D1526' },
+    defaultFolderName: 'Veda',
+    configKey: 'anusthanam',
+  },
+]
 
 // Default configuration for custom collections
 export const DEFAULT_CUSTOM_CONFIG: CollectionConfig = {

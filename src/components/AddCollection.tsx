@@ -7,7 +7,6 @@ import {
   Text,
   FormControl,
   FormLabel,
-  FormHelperText,
   Input,
   Button,
   Alert,
@@ -15,35 +14,62 @@ import {
   AlertTitle,
   AlertDescription,
   useToast,
-  SimpleGrid,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+  PopoverBody,
   Wrap,
   WrapItem,
+  Flex,
 } from '@chakra-ui/react'
-import { ArrowBackIcon } from '@chakra-ui/icons'
+import { ArrowBackIcon, ChevronDownIcon } from '@chakra-ui/icons'
 import { useNavigate } from 'react-router-dom'
-import { COLLECTION_CONFIGS, CUSTOM_COLORS, CUSTOM_ICONS, DEFAULT_CUSTOM_CONFIG } from '../config/collections'
+import { COLLECTION_CONFIGS, CUSTOM_COLORS, CUSTOM_ICONS, DEFAULT_CUSTOM_CONFIG, PREDEFINED_PRESETS, PredefinedPreset } from '../config/collections'
 import { useCollectionStore } from '../stores/collectionStore'
 import { driveService } from '../services/driveService'
 import { scanCollection } from '../services/scanService'
 import { Collection, CollectionType } from '../types'
 
-type PresetType = 'bhajana' | 'anusthanam' | 'custom'
-
 export const AddCollection = () => {
   const navigate = useNavigate()
   const toast = useToast()
-  const { addCollection } = useCollectionStore()
+  const { addCollection, collections } = useCollectionStore()
 
+  const [selectedPreset, setSelectedPreset] = useState<PredefinedPreset | null>(null)
   const [folderName, setFolderName] = useState('')
   const [collectionName, setCollectionName] = useState('')
-  const [usePreset, setUsePreset] = useState<PresetType>('custom')
   const [selectedIcon, setSelectedIcon] = useState(CUSTOM_ICONS[0])
   const [selectedColor, setSelectedColor] = useState(CUSTOM_COLORS[0])
   const [searching, setSearching] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Track if user has manually edited collection name
+  // Track if user has manually edited fields
   const userEditedName = useRef(false)
+  const userEditedFolder = useRef(false)
+  const userEditedIcon = useRef(false)
+  const userEditedColor = useRef(false)
+
+  // When preset changes, auto-populate fields (unless user manually edited them)
+  useEffect(() => {
+    if (selectedPreset) {
+      if (!userEditedFolder.current) {
+        setFolderName(selectedPreset.defaultFolderName)
+      }
+      if (!userEditedIcon.current) {
+        setSelectedIcon(selectedPreset.icon)
+      }
+      if (!userEditedColor.current) {
+        const presetColor = CUSTOM_COLORS.find(c => c.name === selectedPreset.color.name)
+        if (presetColor) {
+          setSelectedColor(presetColor)
+        }
+      }
+    }
+  }, [selectedPreset])
 
   // Auto-fill collection name when folder name changes (only if user hasn't manually edited)
   useEffect(() => {
@@ -52,21 +78,60 @@ export const AddCollection = () => {
     }
   }, [folderName])
 
+  const handlePresetSelect = (preset: PredefinedPreset | null) => {
+    // Reset user edit flags when changing preset
+    userEditedFolder.current = false
+    userEditedIcon.current = false
+    userEditedColor.current = false
+    userEditedName.current = false
+
+    setSelectedPreset(preset)
+
+    if (!preset) {
+      // Reset to defaults for custom
+      setFolderName('')
+      setCollectionName('')
+      setSelectedIcon(CUSTOM_ICONS[0])
+      setSelectedColor(CUSTOM_COLORS[0])
+    }
+  }
+
+  const handleFolderNameChange = (value: string) => {
+    userEditedFolder.current = true
+    setFolderName(value)
+  }
+
   const handleCollectionNameChange = (value: string) => {
     userEditedName.current = true
     setCollectionName(value)
   }
 
+  const handleIconSelect = (icon: string) => {
+    userEditedIcon.current = true
+    setSelectedIcon(icon)
+  }
+
+  const handleColorSelect = (color: typeof CUSTOM_COLORS[0]) => {
+    userEditedColor.current = true
+    setSelectedColor(color)
+  }
+
   const getConfig = () => {
-    if (usePreset === 'custom') {
+    if (selectedPreset) {
+      const configKey = selectedPreset.configKey as keyof typeof COLLECTION_CONFIGS
       return {
-        ...DEFAULT_CUSTOM_CONFIG,
+        ...COLLECTION_CONFIGS[configKey],
         icon: selectedIcon,
         color: selectedColor.color,
         accentColor: selectedColor.accent,
       }
     }
-    return COLLECTION_CONFIGS[usePreset]
+    return {
+      ...DEFAULT_CUSTOM_CONFIG,
+      icon: selectedIcon,
+      color: selectedColor.color,
+      accentColor: selectedColor.accent,
+    }
   }
 
   const handleSearch = async () => {
@@ -79,23 +144,61 @@ export const AddCollection = () => {
     setError(null)
 
     try {
-      const folder = await driveService.findFolderByName(folderName.trim())
+      let folder = null
+      try {
+        folder = await driveService.findFolderByName(folderName.trim())
+      } catch (findError) {
+        console.error('Error finding folder:', findError)
+        setError(`Folder "${folderName}" not found or not accessible in Google Drive`)
+        setSearching(false)
+        return
+      }
 
-      if (!folder) {
-        setError(`Folder "${folderName}" not found in your Google Drive. Please check the name and try again.`)
+      if (!folder || !folder.id) {
+        setError(`Folder "${folderName}" not found or not accessible in Google Drive`)
+        setSearching(false)
+        return
+      }
+
+      // Check if this folder is already added as a collection
+      const existingCollection = collections.find(c => c.driveFolderId === folder.id)
+      if (existingCollection) {
+        setSearching(false)
+        toast({
+          title: 'Collection already added',
+          status: 'warning',
+          duration: 3000,
+          isClosable: true,
+        })
+        return
+      }
+
+      // Check if folder has any content (files or subfolders)
+      try {
+        const files = await driveService.listFiles(folder.id)
+        const subfolders = await driveService.listFolders(folder.id)
+        if (files.length === 0 && subfolders.length === 0) {
+          setError(`Folder "${folderName}" appears to be empty or not accessible`)
+          setSearching(false)
+          return
+        }
+      } catch (contentError) {
+        console.error('Error checking folder contents:', contentError)
+        setError(`Folder "${folderName}" not accessible - please check permissions`)
         setSearching(false)
         return
       }
 
       const config = getConfig()
+      const collectionType = selectedPreset ? selectedPreset.configKey : 'custom'
 
       // Create collection
       const collection: Collection = {
-        id: `${usePreset}-${Date.now()}`,
-        type: usePreset as CollectionType,
+        id: `${collectionType}-${Date.now()}`,
+        type: collectionType as CollectionType,
         name: collectionName.trim() || folderName.trim(),
-        nameDevanagari: usePreset !== 'custom' ? config.nameDevanagari : undefined,
-        nameTamil: usePreset !== 'custom' ? config.nameTamil : undefined,
+        nameDevanagari: selectedPreset && config.nameDevanagari ? config.nameDevanagari : undefined,
+        nameTamil: selectedPreset && config.nameTamil ? config.nameTamil : undefined,
         icon: config.icon,
         color: config.color,
         accentColor: config.accentColor,
@@ -173,17 +276,155 @@ export const AddCollection = () => {
 
         {/* Form */}
         <VStack spacing={5} w="full" bg="white" p={6} borderRadius="md" shadow="sm">
-          {/* Google Drive Folder Name */}
+          {/* Predefined Type Selection - At Top */}
+          <FormControl>
+            <FormLabel>Predefined</FormLabel>
+            <Menu>
+              <MenuButton
+                as={Button}
+                rightIcon={<ChevronDownIcon />}
+                w="full"
+                textAlign="left"
+                variant="outline"
+                fontWeight="normal"
+              >
+                {selectedPreset ? (
+                  <HStack>
+                    <Text fontSize="lg">{selectedPreset.icon}</Text>
+                    <Box
+                      w="16px"
+                      h="16px"
+                      borderRadius="full"
+                      bg={selectedPreset.color.color}
+                    />
+                    <Text>{selectedPreset.name}</Text>
+                  </HStack>
+                ) : (
+                  <Text color="gray.500">Select a preset (optional)</Text>
+                )}
+              </MenuButton>
+              <MenuList>
+                <MenuItem onClick={() => handlePresetSelect(null)}>
+                  <HStack>
+                    <Text fontSize="lg">📁</Text>
+                    <Text color="gray.500">None (Custom)</Text>
+                  </HStack>
+                </MenuItem>
+                {PREDEFINED_PRESETS.map((preset) => (
+                  <MenuItem
+                    key={preset.id}
+                    onClick={() => handlePresetSelect(preset)}
+                  >
+                    <HStack>
+                      <Text fontSize="lg">{preset.icon}</Text>
+                      <Box
+                        w="16px"
+                        h="16px"
+                        borderRadius="full"
+                        bg={preset.color.color}
+                      />
+                      <Text>{preset.name}</Text>
+                    </HStack>
+                  </MenuItem>
+                ))}
+              </MenuList>
+            </Menu>
+          </FormControl>
+
+          {/* Google Drive Folder Name with Icon and Color */}
           <FormControl isRequired>
             <FormLabel>Google Drive Folder Name</FormLabel>
-            <Input
-              value={folderName}
-              onChange={(e) => setFolderName(e.target.value)}
-              placeholder="e.g., MyRecipes, StudyNotes, Bhajans"
-            />
-            <FormHelperText>
-              Enter the exact name of the folder in your Google Drive
-            </FormHelperText>
+            <Flex gap={2} align="center">
+              <Input
+                flex={1}
+                value={folderName}
+                onChange={(e) => handleFolderNameChange(e.target.value)}
+                placeholder="e.g., MyRecipes, StudyNotes, Bhajans"
+              />
+
+              {/* Icon Dropdown */}
+              <Popover placement="bottom-end">
+                <PopoverTrigger>
+                  <Button
+                    variant="outline"
+                    fontSize="xl"
+                    w="50px"
+                    h="40px"
+                    p={0}
+                  >
+                    {selectedIcon}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent w="auto">
+                  <PopoverBody>
+                    <Wrap spacing={1} maxW="200px">
+                      {CUSTOM_ICONS.map((icon) => (
+                        <WrapItem key={icon}>
+                          <Button
+                            size="sm"
+                            variant={selectedIcon === icon ? 'solid' : 'ghost'}
+                            colorScheme={selectedIcon === icon ? 'purple' : 'gray'}
+                            onClick={() => handleIconSelect(icon)}
+                            fontSize="lg"
+                            w="36px"
+                            h="36px"
+                            p={0}
+                          >
+                            {icon}
+                          </Button>
+                        </WrapItem>
+                      ))}
+                    </Wrap>
+                  </PopoverBody>
+                </PopoverContent>
+              </Popover>
+
+              {/* Color Dropdown */}
+              <Popover placement="bottom-end">
+                <PopoverTrigger>
+                  <Button
+                    variant="outline"
+                    w="50px"
+                    h="40px"
+                    p={0}
+                  >
+                    <Box
+                      w="24px"
+                      h="24px"
+                      borderRadius="full"
+                      bg={selectedColor.color}
+                    />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent w="auto">
+                  <PopoverBody>
+                    <Wrap spacing={1} maxW="180px">
+                      {CUSTOM_COLORS.map((colorOption) => (
+                        <WrapItem key={colorOption.name}>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleColorSelect(colorOption)}
+                            w="36px"
+                            h="36px"
+                            p={0}
+                            border={selectedColor.name === colorOption.name ? '2px solid' : 'none'}
+                            borderColor="gray.800"
+                          >
+                            <Box
+                              w="24px"
+                              h="24px"
+                              borderRadius="full"
+                              bg={colorOption.color}
+                            />
+                          </Button>
+                        </WrapItem>
+                      ))}
+                    </Wrap>
+                  </PopoverBody>
+                </PopoverContent>
+              </Popover>
+            </Flex>
           </FormControl>
 
           {/* Collection Name */}
@@ -192,106 +433,9 @@ export const AddCollection = () => {
             <Input
               value={collectionName}
               onChange={(e) => handleCollectionNameChange(e.target.value)}
-              placeholder={folderName.trim() || 'Will default to folder name'}
+              placeholder={folderName.trim() || 'Same as folder name'}
             />
-            <FormHelperText>
-              You can customize this name (defaults to folder name)
-            </FormHelperText>
           </FormControl>
-
-          {/* Collection Type Selection */}
-          <FormControl>
-            <FormLabel>Collection Type</FormLabel>
-            <SimpleGrid columns={3} spacing={3}>
-              <Button
-                variant={usePreset === 'bhajana' ? 'solid' : 'outline'}
-                colorScheme={usePreset === 'bhajana' ? 'orange' : 'gray'}
-                onClick={() => setUsePreset('bhajana')}
-                h="auto"
-                py={3}
-                flexDirection="column"
-              >
-                <Text fontSize="2xl">🎵</Text>
-                <Text fontSize="sm">Bhajana</Text>
-              </Button>
-              <Button
-                variant={usePreset === 'anusthanam' ? 'solid' : 'outline'}
-                colorScheme={usePreset === 'anusthanam' ? 'red' : 'gray'}
-                onClick={() => setUsePreset('anusthanam')}
-                h="auto"
-                py={3}
-                flexDirection="column"
-              >
-                <Text fontSize="2xl">🙏</Text>
-                <Text fontSize="sm">Anusthanam</Text>
-              </Button>
-              <Button
-                variant={usePreset === 'custom' ? 'solid' : 'outline'}
-                colorScheme={usePreset === 'custom' ? 'purple' : 'gray'}
-                onClick={() => setUsePreset('custom')}
-                h="auto"
-                py={3}
-                flexDirection="column"
-              >
-                <Text fontSize="2xl">📁</Text>
-                <Text fontSize="sm">Custom</Text>
-              </Button>
-            </SimpleGrid>
-            <FormHelperText>
-              {usePreset === 'custom'
-                ? 'Create a custom collection with your own icon and color'
-                : `Uses ${COLLECTION_CONFIGS[usePreset]?.name} settings`}
-            </FormHelperText>
-          </FormControl>
-
-          {/* Custom Options - Icon and Color */}
-          {usePreset === 'custom' && (
-            <>
-              {/* Icon Picker */}
-              <FormControl>
-                <FormLabel>Icon</FormLabel>
-                <Wrap spacing={2}>
-                  {CUSTOM_ICONS.map((icon) => (
-                    <WrapItem key={icon}>
-                      <Button
-                        size="lg"
-                        variant={selectedIcon === icon ? 'solid' : 'outline'}
-                        colorScheme={selectedIcon === icon ? 'purple' : 'gray'}
-                        onClick={() => setSelectedIcon(icon)}
-                        fontSize="xl"
-                        w="50px"
-                        h="50px"
-                      >
-                        {icon}
-                      </Button>
-                    </WrapItem>
-                  ))}
-                </Wrap>
-              </FormControl>
-
-              {/* Color Picker */}
-              <FormControl>
-                <FormLabel>Color</FormLabel>
-                <HStack spacing={2}>
-                  {CUSTOM_COLORS.map((colorOption) => (
-                    <Button
-                      key={colorOption.name}
-                      w="40px"
-                      h="40px"
-                      borderRadius="full"
-                      bg={colorOption.color}
-                      border={selectedColor.name === colorOption.name ? '3px solid' : '2px solid'}
-                      borderColor={selectedColor.name === colorOption.name ? 'gray.800' : 'gray.300'}
-                      _hover={{ transform: 'scale(1.1)' }}
-                      onClick={() => setSelectedColor(colorOption)}
-                      aria-label={colorOption.name}
-                    />
-                  ))}
-                </HStack>
-                <FormHelperText>{selectedColor.name}</FormHelperText>
-              </FormControl>
-            </>
-          )}
 
           {error && (
             <Alert status="error" borderRadius="md">
