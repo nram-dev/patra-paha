@@ -4,3 +4,5 @@
 - Enhanced the Audio Panel with external YouTube/Spotify playback, recent URL suggestions, layout refinements, height presets, and auto height switching between audio and embeds.
 - Wired YouTube links in docs to load into the media panel (auto-detect + click-to-load), normalized Google redirect URLs, and disabled autoplay for embeds.
 
+
+- Improved dark theme readability by removing inline text colors in normalized HTML and switching the background to dark gray.

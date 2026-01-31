@@ -100,6 +100,29 @@ function normalizeStyling(element: HTMLElement, theme: 'calm' | 'dark'): void {
     }
   }
 
+  // In dark theme, strip inline text colors so theme colors remain readable.
+  if (theme === 'dark') {
+    if (element.style.color) {
+      element.style.color = ''
+    }
+    const colorAttr = element.getAttribute('color')
+    if (colorAttr) {
+      element.removeAttribute('color')
+    }
+    const colorStyleAttr = element.getAttribute('style')
+    if (colorStyleAttr && /color\s*:/.test(colorStyleAttr)) {
+      const cleaned = colorStyleAttr
+        .split(';')
+        .filter(prop => !/^\s*color\s*:/i.test(prop))
+        .join(';')
+      if (cleaned.trim()) {
+        element.setAttribute('style', cleaned)
+      } else {
+        element.removeAttribute('style')
+      }
+    }
+  }
+
   // Recursively process children
   Array.from(element.children).forEach(child => {
     if (child instanceof HTMLElement) {
