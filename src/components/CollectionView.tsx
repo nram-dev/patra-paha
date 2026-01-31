@@ -41,6 +41,12 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
   const collection = collections.find(c => c.id === collectionId)
   const collectionConfig = collection ? getCollectionConfig(collection.id) : null
 
+  // Determine labels based on collection type
+  const isBhajana = collection?.type === 'bhajana'
+  const categoryLabel = isBhajana ? 'Deities' : 'Categories'
+  const itemLabel = isBhajana ? 'song' : 'item'
+  const itemsLabel = isBhajana ? 'Songs' : 'Items'
+
   // Redirect if collection not found
   useEffect(() => {
     if (!collection && collectionId) {
@@ -429,6 +435,8 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
             onFavoritesSelect={handleFavoritesSelect}
             showingFavorites={showingFavorites}
             loading={loading}
+            categoryLabel={categoryLabel}
+            itemLabel={itemLabel}
           />
         )}
         
@@ -458,6 +466,8 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
             onToggleFavorite={handleToggleFavorite}
             language={language}
             loading={loading}
+            categoryLabel={itemLabel}
+            itemsLabel={itemsLabel}
           />
         )}
         

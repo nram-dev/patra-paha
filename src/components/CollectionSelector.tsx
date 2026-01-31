@@ -1,5 +1,5 @@
-import { Box, Heading, Text, SimpleGrid, Card, CardBody, VStack, HStack, Icon, Button, Spinner } from '@chakra-ui/react'
-import { AddIcon } from '@chakra-ui/icons'
+import { Box, Heading, Text, SimpleGrid, Card, CardBody, VStack, HStack, Icon, IconButton, Spinner, Tooltip, Button } from '@chakra-ui/react'
+import { AddIcon, RepeatIcon, DeleteIcon } from '@chakra-ui/icons'
 import { useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { useCollectionStore } from '../stores/collectionStore'
@@ -7,8 +7,9 @@ import { scanCollection } from '../services/scanService'
 
 export const CollectionSelector = () => {
   const navigate = useNavigate()
-  const { collections, documentCounts, loadCollections, scanErrors, setScanError, clearScanError, refreshDocumentCounts } = useCollectionStore()
+  const { collections, documentCounts, loadCollections, deleteCollection, scanErrors, setScanError, clearScanError, refreshDocumentCounts } = useCollectionStore()
   const [scanning, setScanning] = useState<Record<string, boolean>>({})
+  const [deleting, setDeleting] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
     loadCollections()
@@ -27,6 +28,20 @@ export const CollectionSelector = () => {
       setScanError(collectionId, err)
     } finally {
       setScanning(prev => ({ ...prev, [collectionId]: false }))
+    }
+  }
+
+  const handleDelete = async (collectionId: string, collectionName: string) => {
+    if (!window.confirm(`Delete "${collectionName}"? This will remove the collection from PatraPaha but won't affect your Google Drive files.`)) {
+      return
+    }
+    setDeleting(prev => ({ ...prev, [collectionId]: true }))
+    try {
+      await deleteCollection(collectionId)
+    } catch (err) {
+      console.error('Failed to delete collection:', err)
+    } finally {
+      setDeleting(prev => ({ ...prev, [collectionId]: false }))
     }
   }
 
@@ -86,31 +101,35 @@ export const CollectionSelector = () => {
                           {collection.driveFolderPath}
                         </Text>
                       )}
-                      <HStack spacing={2}>
-                        <Text fontSize="sm" color="gray.500" fontWeight="medium">
-                          {documentCounts[collection.id] || 0}
-                        </Text>
+                      <HStack spacing={2} justify="space-between" w="full">
                         <Text fontSize="sm" color="gray.500">
-                          documents
+                          <Text as="span" fontWeight="medium">{documentCounts[collection.id] || 0}</Text> documents
                         </Text>
+                        <HStack spacing={1}>
+                          <Tooltip label="Scan for changes" hasArrow>
+                            <IconButton
+                              aria-label="Scan collection"
+                              icon={scanning[collection.id] ? <Spinner size="xs" /> : <RepeatIcon />}
+                              size="sm"
+                              variant="ghost"
+                              colorScheme="orange"
+                              onClick={(e) => { e.stopPropagation(); handleScanNow(collection.id) }}
+                              isDisabled={!!scanning[collection.id]}
+                            />
+                          </Tooltip>
+                          <Tooltip label="Delete collection" hasArrow>
+                            <IconButton
+                              aria-label="Delete collection"
+                              icon={deleting[collection.id] ? <Spinner size="xs" /> : <DeleteIcon />}
+                              size="sm"
+                              variant="ghost"
+                              colorScheme="red"
+                              onClick={(e) => { e.stopPropagation(); handleDelete(collection.id, collection.name) }}
+                              isDisabled={!!deleting[collection.id]}
+                            />
+                          </Tooltip>
+                        </HStack>
                       </HStack>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        colorScheme="orange"
-                        onClick={(e) => { e.stopPropagation(); handleScanNow(collection.id) }}
-                        isDisabled={!!scanning[collection.id]}
-                        mt={2}
-                      >
-                        {scanning[collection.id] ? (
-                          <HStack spacing={2}>
-                            <Spinner size="xs" />
-                            <Text>Scanning…</Text>
-                          </HStack>
-                        ) : (
-                          'Scan Now'
-                        )}
-                      </Button>
                       {/* Scan error, if any */}
                       {scanErrors[collection.id] && (
                         <Text fontSize="xs" color="red.600">

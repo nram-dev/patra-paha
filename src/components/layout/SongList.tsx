@@ -12,6 +12,8 @@ interface SongListProps {
   onToggleFavorite: (song: Song) => void
   language: TitleLanguage
   loading: boolean
+  categoryLabel?: string  // e.g., "deity" or "category"
+  itemsLabel?: string     // e.g., "Songs" or "Items"
 }
 
 export default function SongList({
@@ -21,6 +23,8 @@ export default function SongList({
   onToggleFavorite,
   language,
   loading,
+  categoryLabel = 'deity',
+  itemsLabel = 'Songs',
 }: SongListProps) {
   const { colorMode } = useColorMode()
   const [sortBy, setSortBy] = useState<SortOption>('alphabetical')
@@ -74,7 +78,7 @@ export default function SongList({
           fontSize="sm"
           color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}
         >
-          Select a deity to view songs
+          Select a {categoryLabel} to view {itemsLabel.toLowerCase()}
         </Text>
       </Box>
     )
@@ -98,7 +102,7 @@ export default function SongList({
             textTransform="uppercase"
             letterSpacing="wide"
           >
-            Songs ({songs.length})
+            {itemsLabel} ({songs.length})
           </Text>
           <Menu>
             <MenuButton

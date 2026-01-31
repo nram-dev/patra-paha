@@ -10,6 +10,8 @@ interface NavigationProps {
   onFavoritesSelect: () => void
   showingFavorites: boolean
   loading: boolean
+  categoryLabel?: string  // e.g., "Deities" or "Categories"
+  itemLabel?: string      // e.g., "song" or "item"
 }
 
 export default function Navigation({
@@ -19,6 +21,8 @@ export default function Navigation({
   onFavoritesSelect,
   showingFavorites,
   loading,
+  categoryLabel = 'Deities',
+  itemLabel = 'song',
 }: NavigationProps) {
   const { colorMode } = useColorMode()
 
@@ -76,7 +80,7 @@ export default function Navigation({
 
         <Divider mb={4} borderColor={colorMode === 'dark' ? 'dark.border' : 'calm.border'} />
 
-        {/* Deities Section */}
+        {/* Categories Section */}
         <Text
           fontSize="sm"
           fontWeight="bold"
@@ -85,7 +89,7 @@ export default function Navigation({
           textTransform="uppercase"
           letterSpacing="wide"
         >
-          Deities
+          {categoryLabel}
         </Text>
         
         {loading && deities.length === 0 ? (
@@ -131,7 +135,7 @@ export default function Navigation({
                   {deity.name}
                 </Text>
                 <Text fontSize="xs" opacity={0.7}>
-                  {deity.songCount} {deity.songCount === 1 ? 'song' : 'songs'}
+                  {deity.songCount} {deity.songCount === 1 ? itemLabel : `${itemLabel}s`}
                 </Text>
               </Box>
             ))}

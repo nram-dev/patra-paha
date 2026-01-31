@@ -26,11 +26,11 @@ export async function scanCollection(collection: Collection): Promise<void> {
 
   const folders = await driveService.listFolders(driveFolderId)
 
-  // Filter for Bhajana-type to skip special folders starting with "__"
-  const filteredFolders =
-    collection.type === 'bhajana'
-      ? folders.filter(f => !driveService.isNonDeityFolder(f.name))
-      : folders
+  // Filter out special folders (starting with "__") for collections with deity-organization feature
+  const shouldFilterSpecialFolders = collection.features?.includes('deity-organization')
+  const filteredFolders = shouldFilterSpecialFolders
+    ? folders.filter(f => !driveService.isNonDeityFolder(f.name))
+    : folders
 
   const categories: Category[] = []
   const documentsToUpsert: Document[] = []

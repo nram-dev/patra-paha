@@ -63,6 +63,10 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
 
   deleteCollection: async (id: string) => {
     try {
+      // Delete associated categories and documents first
+      await db.categories.where('collectionId').equals(id).delete()
+      await db.documents.where('collectionId').equals(id).delete()
+      // Then delete the collection itself
       await db.collections.delete(id)
       await get().loadCollections()
     } catch (error) {

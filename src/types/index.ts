@@ -1,5 +1,5 @@
 // Collection Types
-export type CollectionType = 'bhajana' | 'anusthanam'
+export type CollectionType = 'bhajana' | 'anusthanam' | 'custom'
 
 export interface Collection {
   id: string
@@ -144,7 +144,7 @@ export interface MetadataField {
 
 export interface CollectionConfig {
   id: string
-  type: CollectionType
+  type: CollectionType  // 'bhajana', 'anusthanam', or 'custom'
   name: string
   nameDevanagari?: string
   nameTamil?: string
