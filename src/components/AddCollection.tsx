@@ -21,6 +21,7 @@ import { useNavigate } from 'react-router-dom'
 import { COLLECTION_CONFIGS } from '../config/collections'
 import { useCollectionStore } from '../stores/collectionStore'
 import { driveService } from '../services/driveService'
+import { scanCollection } from '../services/scanService'
 import { Collection, CollectionType } from '../types'
 
 export const AddCollection = () => {
@@ -74,11 +75,32 @@ export const AddCollection = () => {
 
       toast({
         title: 'Collection added!',
-        description: `${collection.name} has been added successfully.`,
-        status: 'success',
-        duration: 3000,
+        description: `Scanning folder contents...`,
+        status: 'info',
+        duration: 2000,
         isClosable: true,
       })
+
+      // Auto-scan the collection to populate categories
+      try {
+        await scanCollection(collection)
+        toast({
+          title: 'Scan complete!',
+          description: `${collection.name} is ready to use.`,
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+        })
+      } catch (scanError) {
+        console.error('Failed to scan collection:', scanError)
+        toast({
+          title: 'Scan failed',
+          description: 'Collection added but folder scan failed. Try "Scan now" from the home page.',
+          status: 'warning',
+          duration: 5000,
+          isClosable: true,
+        })
+      }
 
       // Navigate to the new collection
       navigate(`/collection/${collection.id}`)

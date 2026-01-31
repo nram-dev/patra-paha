@@ -94,23 +94,23 @@ export const CollectionSelector = () => {
                           documents
                         </Text>
                       </HStack>
-                      <HStack spacing={3}>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={(e) => { e.stopPropagation(); handleScanNow(collection.id) }}
-                          isDisabled={!!scanning[collection.id]}
-                        >
-                          {scanning[collection.id] ? (
-                            <HStack spacing={2}>
-                              <Spinner size="xs" />
-                              <Text>Scanning…</Text>
-                            </HStack>
-                          ) : (
-                            'Scan now'
-                          )}
-                        </Button>
-                      </HStack>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        colorScheme="orange"
+                        onClick={(e) => { e.stopPropagation(); handleScanNow(collection.id) }}
+                        isDisabled={!!scanning[collection.id]}
+                        mt={2}
+                      >
+                        {scanning[collection.id] ? (
+                          <HStack spacing={2}>
+                            <Spinner size="xs" />
+                            <Text>Scanning…</Text>
+                          </HStack>
+                        ) : (
+                          'Scan Now'
+                        )}
+                      </Button>
                       {/* Scan error, if any */}
                       {scanErrors[collection.id] && (
                         <Text fontSize="xs" color="red.600">
