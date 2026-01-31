@@ -1,5 +1,5 @@
-import { Box, IconButton, useToast } from '@chakra-ui/react'
-import { ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons'
+import { Box, IconButton, useToast, HStack, Text, Spinner, VStack, Menu, MenuButton, MenuList, MenuItem, Button, useColorMode } from '@chakra-ui/react'
+import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon } from '@chakra-ui/icons'
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { driveService } from '../services/driveService'
@@ -24,13 +24,17 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
   const { collectionId } = useParams<{ collectionId: string }>()
   const navigate = useNavigate()
   const toast = useToast()
+  const { colorMode } = useColorMode()
   const { collections, setScanError, clearScanError } = useCollectionStore()
   
   const [deities, setDeities] = useState<Deity[]>([])
   const [selectedDeity, setSelectedDeity] = useState<Deity | null>(null)
   const [songs, setSongs] = useState<Song[]>([])
   const [selectedSong, setSelectedSong] = useState<Song | null>(null)
+  const [nowPlayingSong, setNowPlayingSong] = useState<Song | null>(null)
+  const [audioBlobUrl, setAudioBlobUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [viewerLoading, setViewerLoading] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [allSongs, setAllSongs] = useState<Song[]>([])
   const [showingFavorites, setShowingFavorites] = useState(false)
@@ -40,6 +44,13 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
   const [showEmptyCategories, setShowEmptyCategories] = useState(false)
   const [sortBy, setSortBy] = useState<SortOption>('alphabetical')
 
+  const sortOptions: Record<SortOption, string> = {
+    alphabetical: 'Alphabetical',
+    recent: 'Recently Viewed',
+    mostViewed: 'Most Viewed',
+    recentlyModified: 'Recently Modified',
+  }
+
   // Get collection config
   const collection = collections.find(c => c.id === collectionId)
   const collectionConfig = collection ? getCollectionConfig(collection.id) : null
@@ -47,6 +58,7 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
   // Determine labels based on collection type
   const isBhajana = collection?.type === 'bhajana'
   const categoryLabel = isBhajana ? 'Deities' : 'Categories'
+  const categoryLabelSingular = isBhajana ? 'deity' : 'category'
   const itemLabel = isBhajana ? 'song' : 'item'
   const itemsLabel = isBhajana ? 'Songs' : 'Items'
 
@@ -135,6 +147,15 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
     setIsColumn2Collapsed(col2Collapsed)
     setShowEmptyCategories(emptyCategories)
   }, [])
+
+  // Cleanup audio blob URLs when track changes/unmounts
+  useEffect(() => {
+    return () => {
+      if (audioBlobUrl?.startsWith('blob:')) {
+        URL.revokeObjectURL(audioBlobUrl)
+      }
+    }
+  }, [audioBlobUrl])
 
   // Global keyboard shortcuts
   useEffect(() => {
@@ -275,9 +296,7 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
     }
   }
 
-  const handleSongSelect = async (song: Song) => {
-    setSelectedSong(song)
-
+  const updateViewData = async (song: Song) => {
     const updatedViewData = {
       ...song,
       viewCount: (song.viewCount || 0) + 1,
@@ -287,11 +306,19 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
       viewCount: updatedViewData.viewCount,
       lastViewed: updatedViewData.lastViewed,
     })
+    return updatedViewData
+  }
 
-    // Handle PDF, image, and audio files - fetch blob URL to bypass CORS
-    if (song.contentType === 'pdf' || song.contentType === 'image' || song.contentType === 'audio') {
+  const handleContentSelect = async (song: Song) => {
+    if (song.contentType === 'audio') return
+    setSelectedSong(song)
+
+    const updatedViewData = await updateViewData(song)
+
+    // Handle PDF and image files - fetch blob URL to bypass CORS
+    if (song.contentType === 'pdf' || song.contentType === 'image') {
       try {
-        setLoading(true)
+        setViewerLoading(true)
         // Fetch blob URL (bypasses CORS issues with direct Google Drive URLs)
         const blobUrl = await driveService.getFileBlobUrl(song.driveFileId)
         const updatedSong = {
@@ -303,14 +330,14 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
       } catch (error) {
         console.error('Failed to load file:', error)
       } finally {
-        setLoading(false)
+        setViewerLoading(false)
       }
       return
     }
 
     if (!song.content && song.contentType === 'text') {
       try {
-        setLoading(true)
+        setViewerLoading(true)
         const html = await driveService.exportAsHtml(song.driveFileId)
         
         // Parse multi-language content
@@ -351,7 +378,7 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
       } catch (error) {
         console.error('Failed to load document content:', error)
       } finally {
-        setLoading(false)
+        setViewerLoading(false)
       }
     } else if (song.content && typeof song.content === 'string' && song.contentType === 'text') {
       // Re-parse cached content to check if it's multi-language
@@ -391,6 +418,26 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
     }
   }
 
+  const handleAudioSelect = async (song: Song) => {
+    if (song.contentType !== 'audio') return
+    const updatedViewData = await updateViewData(song)
+
+    try {
+      setViewerLoading(true)
+      const blobUrl = await driveService.getFileBlobUrl(song.driveFileId)
+      const updatedSong = {
+        ...updatedViewData,
+        imageUrl: blobUrl,
+      }
+      setNowPlayingSong(updatedSong)
+      setAudioBlobUrl(blobUrl)
+    } catch (error) {
+      console.error('Failed to load audio:', error)
+    } finally {
+      setViewerLoading(false)
+    }
+  }
+
   const sortedSongs = useMemo(() => {
     const songsCopy = [...songs]
     
@@ -418,14 +465,44 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
     }
   }, [songs, sortBy, language])
 
+  const viewableSongs = useMemo(
+    () => sortedSongs.filter(song => song.contentType !== 'audio'),
+    [sortedSongs]
+  )
+  const docSongs = useMemo(
+    () => viewableSongs.filter(song => song.contentType === 'text' || song.contentType === 'pdf'),
+    [viewableSongs]
+  )
+  const imageSongs = useMemo(
+    () => viewableSongs.filter(song => song.contentType === 'image'),
+    [viewableSongs]
+  )
+  const audioSongs = useMemo(
+    () => sortedSongs.filter(song => song.contentType === 'audio'),
+    [sortedSongs]
+  )
+
   const handleAdjacentSelect = (direction: 'prev' | 'next') => {
     if (!selectedSong) return
-    const currentIndex = sortedSongs.findIndex(song => song.id === selectedSong.id)
+    const currentIndex = viewableSongs.findIndex(song => song.id === selectedSong.id)
     if (currentIndex === -1) return
     const nextIndex = direction === 'next' ? currentIndex + 1 : currentIndex - 1
-    const nextSong = sortedSongs[nextIndex]
+    const nextSong = viewableSongs[nextIndex]
     if (nextSong) {
-      handleSongSelect(nextSong)
+      handleContentSelect(nextSong)
+    }
+  }
+
+  const audioQueue = audioSongs
+
+  const handleAudioAdjacentSelect = (direction: 'prev' | 'next') => {
+    if (!nowPlayingSong) return
+    const currentIndex = audioQueue.findIndex(song => song.id === nowPlayingSong.id)
+    if (currentIndex === -1) return
+    const nextIndex = direction === 'next' ? currentIndex + 1 : currentIndex - 1
+    const nextSong = audioQueue[nextIndex]
+    if (nextSong) {
+      handleAudioSelect(nextSong)
     }
   }
 
@@ -440,7 +517,11 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
         .toArray()
       setSongs(deitySongs)
     }
-    await handleSongSelect(song)
+    if (song.contentType === 'audio') {
+      await handleAudioSelect(song)
+    } else {
+      await handleContentSelect(song)
+    }
   }
 
   const handleLanguageChange = async (newLanguage: TitleLanguage) => {
@@ -542,18 +623,164 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
 
         {/* Column 2: Song List */}
         {!isColumn2Collapsed && (
-          <SongList
-            songs={sortedSongs}
-            selectedSong={selectedSong}
-            onSongSelect={handleSongSelect}
-            onToggleFavorite={handleToggleFavorite}
-            language={language}
-            loading={loading}
-            sortBy={sortBy}
-            onSortChange={setSortBy}
-            categoryLabel={itemLabel}
-            itemsLabel={itemsLabel}
-          />
+          <Box
+            w="280px"
+            h="100%"
+            bg={colorMode === 'dark' ? 'dark.surface' : 'calm.surface'}
+            borderRight="1px"
+            borderColor={colorMode === 'dark' ? 'dark.border' : 'calm.border'}
+            overflowY="auto"
+          >
+            <Box p={4}>
+              <HStack justify="space-between" mb={3}>
+                <Text
+                  fontSize="sm"
+                  fontWeight="bold"
+                  color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}
+                  textTransform="uppercase"
+                  letterSpacing="wide"
+                >
+                  {itemsLabel} ({sortedSongs.length})
+                </Text>
+                <Menu>
+                  <MenuButton
+                    as={Button}
+                    size="xs"
+                    variant="ghost"
+                    rightIcon={<ChevronDownIcon />}
+                    fontSize="xs"
+                  >
+                    {sortOptions[sortBy]}
+                  </MenuButton>
+                  <MenuList
+                    bg={colorMode === 'dark' ? 'dark.surface' : 'calm.surface'}
+                    borderColor={colorMode === 'dark' ? 'dark.border' : 'calm.border'}
+                    minW="150px"
+                  >
+                    {Object.entries(sortOptions).map(([key, label]) => (
+                      <MenuItem
+                        key={key}
+                        onClick={() => setSortBy(key as SortOption)}
+                        fontSize="sm"
+                        bg={sortBy === key ? (colorMode === 'dark' ? 'dark.accent' : 'calm.accent') : 'transparent'}
+                        color={sortBy === key ? 'white' : undefined}
+                        _hover={{
+                          bg: sortBy === key ? undefined : (colorMode === 'dark' ? 'dark.border' : 'calm.border'),
+                        }}
+                      >
+                        {label}
+                      </MenuItem>
+                    ))}
+                  </MenuList>
+                </Menu>
+              </HStack>
+
+              {loading ? (
+                <Box textAlign="center" py={8}>
+                  <Spinner size="sm" />
+                </Box>
+              ) : sortedSongs.length === 0 ? (
+                <Text fontSize="sm" color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}>
+                  Select a {categoryLabelSingular} to view items
+                </Text>
+              ) : (
+                <VStack spacing={4} align="stretch">
+                  {docSongs.length > 0 && (
+                    <Box>
+                      <Text
+                        fontSize="xs"
+                        fontWeight="bold"
+                        color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}
+                        textTransform="uppercase"
+                        letterSpacing="wide"
+                        mb={2}
+                      >
+                        Docs ({docSongs.length})
+                      </Text>
+                      <SongList
+                        songs={docSongs}
+                        selectedSong={selectedSong}
+                        onSongSelect={handleContentSelect}
+                        onToggleFavorite={handleToggleFavorite}
+                        language={language}
+                        loading={loading}
+                        sortBy={sortBy}
+                        onSortChange={setSortBy}
+                        showContainer={false}
+                        showHeader={false}
+                        showSort={false}
+                        showEmptyState={false}
+                        categoryLabel={categoryLabel}
+                        itemsLabel={itemsLabel}
+                      />
+                    </Box>
+                  )}
+
+                  {imageSongs.length > 0 && (
+                    <Box>
+                      <Text
+                        fontSize="xs"
+                        fontWeight="bold"
+                        color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}
+                        textTransform="uppercase"
+                        letterSpacing="wide"
+                        mb={2}
+                      >
+                        Images ({imageSongs.length})
+                      </Text>
+                      <SongList
+                        songs={imageSongs}
+                        selectedSong={selectedSong}
+                        onSongSelect={handleContentSelect}
+                        onToggleFavorite={handleToggleFavorite}
+                        language={language}
+                        loading={loading}
+                        sortBy={sortBy}
+                        onSortChange={setSortBy}
+                        showContainer={false}
+                        showHeader={false}
+                        showSort={false}
+                        showEmptyState={false}
+                        categoryLabel={categoryLabel}
+                        itemsLabel={itemsLabel}
+                      />
+                    </Box>
+                  )}
+
+                  {audioSongs.length > 0 && (
+                    <Box>
+                      <Text
+                        fontSize="xs"
+                        fontWeight="bold"
+                        color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}
+                        textTransform="uppercase"
+                        letterSpacing="wide"
+                        mb={2}
+                      >
+                        Audio ({audioSongs.length})
+                      </Text>
+                      <SongList
+                        songs={audioSongs}
+                        selectedSong={nowPlayingSong}
+                        onSongSelect={handleAudioSelect}
+                        onToggleFavorite={handleToggleFavorite}
+                        language={language}
+                        loading={loading}
+                        sortBy={sortBy}
+                        onSortChange={setSortBy}
+                        showContainer={false}
+                        showHeader={false}
+                        showSort={false}
+                        showEmptyState={false}
+                        categoryLabel={categoryLabel}
+                        itemsLabel={itemsLabel}
+                      />
+                    </Box>
+                  )}
+                </VStack>
+              )}
+            </Box>
+          </Box>
         )}
         
         {/* Toggle button for Column 2 */}
@@ -580,11 +807,16 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
         {/* Column 3: Song Viewer */}
         <SongViewer
           song={selectedSong}
-          loading={loading}
-          onPrev={selectedSong?.contentType === 'audio' ? () => handleAdjacentSelect('prev') : undefined}
-          onNext={selectedSong?.contentType === 'audio' ? () => handleAdjacentSelect('next') : undefined}
-          hasPrev={selectedSong ? sortedSongs.findIndex(song => song.id === selectedSong.id) > 0 : false}
-          hasNext={selectedSong ? sortedSongs.findIndex(song => song.id === selectedSong.id) < sortedSongs.length - 1 : false}
+          loading={viewerLoading}
+          onPrev={selectedSong ? () => handleAdjacentSelect('prev') : undefined}
+          onNext={selectedSong ? () => handleAdjacentSelect('next') : undefined}
+          hasPrev={selectedSong ? viewableSongs.findIndex(song => song.id === selectedSong.id) > 0 : false}
+          hasNext={selectedSong ? viewableSongs.findIndex(song => song.id === selectedSong.id) < viewableSongs.length - 1 : false}
+          nowPlayingSong={nowPlayingSong}
+          onAudioPrev={nowPlayingSong ? () => handleAudioAdjacentSelect('prev') : undefined}
+          onAudioNext={nowPlayingSong ? () => handleAudioAdjacentSelect('next') : undefined}
+          hasAudioPrev={nowPlayingSong ? audioQueue.findIndex(song => song.id === nowPlayingSong.id) > 0 : false}
+          hasAudioNext={nowPlayingSong ? audioQueue.findIndex(song => song.id === nowPlayingSong.id) < audioQueue.length - 1 : false}
         />
       </Box>
       

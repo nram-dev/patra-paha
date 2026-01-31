@@ -20,10 +20,90 @@ interface SongViewerProps {
   onNext?: () => void
   hasPrev?: boolean
   hasNext?: boolean
+  nowPlayingSong?: Song | null
+  onAudioPrev?: () => void
+  onAudioNext?: () => void
+  hasAudioPrev?: boolean
+  hasAudioNext?: boolean
 }
 
-export default function SongViewer({ song, loading, onPrev, onNext, hasPrev, hasNext }: SongViewerProps) {
+export default function SongViewer({
+  song,
+  loading,
+  onPrev,
+  onNext,
+  hasPrev,
+  hasNext,
+  nowPlayingSong,
+  onAudioPrev,
+  onAudioNext,
+  hasAudioPrev,
+  hasAudioNext,
+}: SongViewerProps) {
   const { colorMode } = useColorMode()
+  const showMiniPlayer = Boolean(nowPlayingSong)
+  const miniPlayer = showMiniPlayer ? (
+    <Box
+      position="sticky"
+      bottom="0"
+      zIndex={2}
+      borderTop="1px solid"
+      borderColor={colorMode === 'dark' ? 'dark.border' : 'gray.200'}
+      bg={colorMode === 'dark' ? 'dark.surface' : 'calm.surface'}
+      px={4}
+      py={3}
+      pb="calc(env(safe-area-inset-bottom, 0px) + 12px)"
+    >
+      <HStack spacing={3} mb={2} justify="space-between" flexWrap="wrap">
+        <Text
+          fontSize="sm"
+          color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}
+        >
+          Now Playing: {nowPlayingSong?.name || 'Audio'}
+        </Text>
+        <HStack spacing={2}>
+          <Button
+            size="xs"
+            leftIcon={<ChevronLeftIcon />}
+            onClick={onAudioPrev}
+            isDisabled={!hasAudioPrev || !onAudioPrev}
+          >
+            Prev
+          </Button>
+          <Button
+            size="xs"
+            rightIcon={<ChevronRightIcon />}
+            onClick={onAudioNext}
+            isDisabled={!hasAudioNext || !onAudioNext}
+          >
+            Next
+          </Button>
+          <IconButton
+            aria-label="Download audio"
+            icon={<DownloadIcon />}
+            size="xs"
+            as="a"
+            href={nowPlayingSong?.imageUrl}
+            download={nowPlayingSong?.name}
+            target="_blank"
+          />
+        </HStack>
+      </HStack>
+      {nowPlayingSong?.imageUrl ? (
+        <audio
+          src={nowPlayingSong.imageUrl}
+          controls
+          style={{ width: '100%' }}
+          onEnded={onAudioNext}
+        />
+      ) : (
+        <Text color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}>
+          Audio URL not available
+        </Text>
+      )}
+    </Box>
+  ) : null
+
   const [fontSize, setFontSize] = useState<'small' | 'medium' | 'large' | 'xlarge'>('medium')
   const [imageZoom, setImageZoom] = useState(100)
   const [pdfNumPages, setPdfNumPages] = useState<number | null>(null)
@@ -97,7 +177,7 @@ export default function SongViewer({ song, loading, onPrev, onNext, hasPrev, has
   useEffect(() => {
     return () => {
       // Revoke blob URL to prevent memory leaks
-      if (song?.imageUrl?.startsWith('blob:')) {
+      if (song?.imageUrl?.startsWith('blob:') && song.contentType !== 'audio') {
         URL.revokeObjectURL(song.imageUrl)
       }
     }
@@ -124,16 +204,17 @@ export default function SongViewer({ song, loading, onPrev, onNext, hasPrev, has
         flex="1"
         h="100%"
         bg={colorMode === 'dark' ? 'dark.background' : 'calm.background'}
-        p={8}
         display="flex"
-        alignItems="center"
-        justifyContent="center"
+        flexDirection="column"
+        overflowY="auto"
       >
-        <Text
-          color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}
-        >
-          Select an item to view
-        </Text>
+        <Box p={8} flex="1" display="flex" alignItems="center" justifyContent="center">
+          <Text
+            color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}
+          >
+            Select an item to view
+          </Text>
+        </Box>
       </Box>
     )
   }
@@ -144,12 +225,13 @@ export default function SongViewer({ song, loading, onPrev, onNext, hasPrev, has
         flex="1"
         h="100%"
         bg={colorMode === 'dark' ? 'dark.background' : 'calm.background'}
-        p={8}
         display="flex"
-        alignItems="center"
-        justifyContent="center"
+        flexDirection="column"
+        overflowY="auto"
       >
-        <Spinner size="lg" />
+        <Box p={8} flex="1" display="flex" alignItems="center" justifyContent="center">
+          <Spinner size="lg" />
+        </Box>
       </Box>
     )
   }
@@ -166,118 +248,122 @@ export default function SongViewer({ song, loading, onPrev, onNext, hasPrev, has
         flex="1"
         h="100%"
         bg={colorMode === 'dark' ? 'dark.background' : 'calm.background'}
-        overflowY="auto"
+        display="flex"
+        flexDirection="column"
       >
-        <Box maxW="1200px" mx="auto" p={8}>
-          {/* Title */}
-          <Heading
-            size="lg"
-            mb={4}
-            color={colorMode === 'dark' ? 'dark.textPrimary' : 'calm.textPrimary'}
-          >
-            {song.name}
-          </Heading>
+        <Box flex="1" overflowY="auto">
+          <Box maxW="1200px" mx="auto" p={8} pb={showMiniPlayer ? 24 : 8}>
+            {/* Title */}
+            <Heading
+              size="lg"
+              mb={4}
+              color={colorMode === 'dark' ? 'dark.textPrimary' : 'calm.textPrimary'}
+            >
+              {song.name}
+            </Heading>
 
-          {/* PDF controls */}
-          <HStack mb={4} spacing={2} justify="space-between" flexWrap="wrap">
-            <HStack spacing={2}>
-              <IconButton
-                aria-label="Zoom out"
-                icon={<MinusIcon />}
-                size="sm"
-                onClick={() => setPdfScale(prev => Math.max(0.5, prev - 0.25))}
-              />
-              <Text fontSize="xs" color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}>
-                {Math.round(pdfScale * 100)}%
-              </Text>
-              <IconButton
-                aria-label="Zoom in"
-                icon={<AddIcon />}
-                size="sm"
-                onClick={() => setPdfScale(prev => Math.min(2.0, prev + 0.25))}
-              />
-              <IconButton
-                aria-label="Reset zoom"
-                icon={<Text fontSize="xs">100%</Text>}
-                size="sm"
-                onClick={() => setPdfScale(1.0)}
-              />
-            </HStack>
-
-            <HStack spacing={2}>
-              <Button
-                size="sm"
-                leftIcon={<ChevronLeftIcon />}
-                onClick={() => setPdfPageNumber(prev => Math.max(1, prev - 1))}
-                isDisabled={pdfPageNumber <= 1}
-              >
-                Prev
-              </Button>
-              <Text fontSize="sm" color={colorMode === 'dark' ? 'dark.textPrimary' : 'calm.textPrimary'}>
-                Page {pdfPageNumber} of {pdfNumPages || '...'}
-              </Text>
-              <Button
-                size="sm"
-                rightIcon={<ChevronRightIcon />}
-                onClick={() => setPdfPageNumber(prev => Math.min(pdfNumPages || 1, prev + 1))}
-                isDisabled={pdfPageNumber >= (pdfNumPages || 1)}
-              >
-                Next
-              </Button>
-              <IconButton
-                aria-label="Download PDF"
-                icon={<DownloadIcon />}
-                size="sm"
-                as="a"
-                href={song.imageUrl}
-                download={song.name}
-                target="_blank"
-              />
-            </HStack>
-          </HStack>
-
-          {/* PDF display */}
-          <Box
-            borderRadius="md"
-            overflow="auto"
-            bg={colorMode === 'dark' ? 'dark.surface' : 'calm.surface'}
-            p={4}
-            display="flex"
-            justifyContent="center"
-          >
-            {song.imageUrl ? (
-              <Document
-                file={song.imageUrl}
-                onLoadSuccess={onDocumentLoadSuccess}
-                loading={
-                  <Box textAlign="center" py={8}>
-                    <Spinner size="lg" />
-                    <Text mt={2} color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}>
-                      Loading PDF...
-                    </Text>
-                  </Box>
-                }
-                error={
-                  <Text color="red.500" textAlign="center" py={8}>
-                    Failed to load PDF. Please try again.
-                  </Text>
-                }
-              >
-                <Page
-                  pageNumber={pdfPageNumber}
-                  scale={pdfScale}
-                  renderTextLayer={true}
-                  renderAnnotationLayer={true}
+            {/* PDF controls */}
+            <HStack mb={4} spacing={2} justify="space-between" flexWrap="wrap">
+              <HStack spacing={2}>
+                <IconButton
+                  aria-label="Zoom out"
+                  icon={<MinusIcon />}
+                  size="sm"
+                  onClick={() => setPdfScale(prev => Math.max(0.5, prev - 0.25))}
                 />
-              </Document>
-            ) : (
-              <Text color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}>
-                PDF URL not available
-              </Text>
-            )}
+                <Text fontSize="xs" color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}>
+                  {Math.round(pdfScale * 100)}%
+                </Text>
+                <IconButton
+                  aria-label="Zoom in"
+                  icon={<AddIcon />}
+                  size="sm"
+                  onClick={() => setPdfScale(prev => Math.min(2.0, prev + 0.25))}
+                />
+                <IconButton
+                  aria-label="Reset zoom"
+                  icon={<Text fontSize="xs">100%</Text>}
+                  size="sm"
+                  onClick={() => setPdfScale(1.0)}
+                />
+              </HStack>
+
+              <HStack spacing={2}>
+                <Button
+                  size="sm"
+                  leftIcon={<ChevronLeftIcon />}
+                  onClick={() => setPdfPageNumber(prev => Math.max(1, prev - 1))}
+                  isDisabled={pdfPageNumber <= 1}
+                >
+                  Prev
+                </Button>
+                <Text fontSize="sm" color={colorMode === 'dark' ? 'dark.textPrimary' : 'calm.textPrimary'}>
+                  Page {pdfPageNumber} of {pdfNumPages || '...'}
+                </Text>
+                <Button
+                  size="sm"
+                  rightIcon={<ChevronRightIcon />}
+                  onClick={() => setPdfPageNumber(prev => Math.min(pdfNumPages || 1, prev + 1))}
+                  isDisabled={pdfPageNumber >= (pdfNumPages || 1)}
+                >
+                  Next
+                </Button>
+                <IconButton
+                  aria-label="Download PDF"
+                  icon={<DownloadIcon />}
+                  size="sm"
+                  as="a"
+                  href={song.imageUrl}
+                  download={song.name}
+                  target="_blank"
+                />
+              </HStack>
+            </HStack>
+
+            {/* PDF display */}
+            <Box
+              borderRadius="md"
+              overflow="auto"
+              bg={colorMode === 'dark' ? 'dark.surface' : 'calm.surface'}
+              p={4}
+              display="flex"
+              justifyContent="center"
+            >
+              {song.imageUrl ? (
+                <Document
+                  file={song.imageUrl}
+                  onLoadSuccess={onDocumentLoadSuccess}
+                  loading={
+                    <Box textAlign="center" py={8}>
+                      <Spinner size="lg" />
+                      <Text mt={2} color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}>
+                        Loading PDF...
+                      </Text>
+                    </Box>
+                  }
+                  error={
+                    <Text color="red.500" textAlign="center" py={8}>
+                      Failed to load PDF. Please try again.
+                    </Text>
+                  }
+                >
+                  <Page
+                    pageNumber={pdfPageNumber}
+                    scale={pdfScale}
+                    renderTextLayer={true}
+                    renderAnnotationLayer={true}
+                  />
+                </Document>
+              ) : (
+                <Text color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}>
+                  PDF URL not available
+                </Text>
+              )}
+            </Box>
           </Box>
         </Box>
-      </Box>
+        {miniPlayer}
+    </Box>
     )
   }
 
@@ -288,78 +374,82 @@ export default function SongViewer({ song, loading, onPrev, onNext, hasPrev, has
         flex="1"
         h="100%"
         bg={colorMode === 'dark' ? 'dark.background' : 'calm.background'}
-        overflowY="auto"
+        display="flex"
+        flexDirection="column"
       >
-        <Box maxW="1200px" mx="auto" p={8}>
-          {/* Title */}
-          <Heading
-            size="lg"
-            mb={4}
-            color={colorMode === 'dark' ? 'dark.textPrimary' : 'calm.textPrimary'}
-          >
-            {song.name}
-          </Heading>
+        <Box flex="1" overflowY="auto">
+          <Box maxW="1200px" mx="auto" p={8} pb={showMiniPlayer ? 24 : 8}>
+            {/* Title */}
+            <Heading
+              size="lg"
+              mb={4}
+              color={colorMode === 'dark' ? 'dark.textPrimary' : 'calm.textPrimary'}
+            >
+              {song.name}
+            </Heading>
 
-          {/* Image controls */}
-          <HStack mb={4} spacing={2}>
-            <IconButton
-              aria-label="Zoom out"
-              icon={<MinusIcon />}
-              size="sm"
-              onClick={() => setImageZoom(prev => Math.max(25, prev - 25))}
-            />
-            <Text fontSize="xs" color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}>
-              {imageZoom}%
-            </Text>
-            <IconButton
-              aria-label="Zoom in"
-              icon={<AddIcon />}
-              size="sm"
-              onClick={() => setImageZoom(prev => Math.min(200, prev + 25))}
-            />
-            <IconButton
-              aria-label="Reset zoom"
-              icon={<Text fontSize="xs">100%</Text>}
-              size="sm"
-              onClick={() => setImageZoom(100)}
-            />
-            <IconButton
-              aria-label="Download image"
-              icon={<DownloadIcon />}
-              size="sm"
-              as="a"
-              href={song.imageUrl}
-              download={song.name}
-              target="_blank"
-            />
-          </HStack>
-
-          {/* Image display */}
-          <Box
-            borderRadius="md"
-            overflow="auto"
-            maxH="calc(100vh - 250px)"
-            bg={colorMode === 'dark' ? 'dark.surface' : 'calm.surface'}
-            p={4}
-          >
-            {song.imageUrl ? (
-              <Image
-                src={song.imageUrl}
-                alt={song.name}
-                style={{
-                  transform: `scale(${imageZoom / 100})`,
-                  transformOrigin: 'top left',
-                  transition: 'transform 0.2s',
-                }}
-                maxW="none"
+            {/* Image controls */}
+            <HStack mb={4} spacing={2}>
+              <IconButton
+                aria-label="Zoom out"
+                icon={<MinusIcon />}
+                size="sm"
+                onClick={() => setImageZoom(prev => Math.max(25, prev - 25))}
               />
-            ) : (
-              <Text color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}>
-                Image URL not available
+              <Text fontSize="xs" color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}>
+                {imageZoom}%
               </Text>
-            )}
+              <IconButton
+                aria-label="Zoom in"
+                icon={<AddIcon />}
+                size="sm"
+                onClick={() => setImageZoom(prev => Math.min(200, prev + 25))}
+              />
+              <IconButton
+                aria-label="Reset zoom"
+                icon={<Text fontSize="xs">100%</Text>}
+                size="sm"
+                onClick={() => setImageZoom(100)}
+              />
+              <IconButton
+                aria-label="Download image"
+                icon={<DownloadIcon />}
+                size="sm"
+                as="a"
+                href={song.imageUrl}
+                download={song.name}
+                target="_blank"
+              />
+            </HStack>
+
+            {/* Image display */}
+            <Box
+              borderRadius="md"
+              overflow="auto"
+              maxH="calc(100vh - 250px)"
+              bg={colorMode === 'dark' ? 'dark.surface' : 'calm.surface'}
+              p={4}
+            >
+              {song.imageUrl ? (
+                <Image
+                  src={song.imageUrl}
+                  alt={song.name}
+                  style={{
+                    transform: `scale(${imageZoom / 100})`,
+                    transformOrigin: 'top left',
+                    transition: 'transform 0.2s',
+                  }}
+                  maxW="none"
+                />
+              ) : (
+                <Text color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}>
+                  Image URL not available
+                </Text>
+              )}
+            </Box>
           </Box>
         </Box>
+        {miniPlayer}
       </Box>
     )
   }
@@ -371,70 +461,74 @@ export default function SongViewer({ song, loading, onPrev, onNext, hasPrev, has
         flex="1"
         h="100%"
         bg={colorMode === 'dark' ? 'dark.background' : 'calm.background'}
-        overflowY="auto"
+        display="flex"
+        flexDirection="column"
       >
-        <Box maxW="800px" mx="auto" p={8}>
-          {/* Title */}
-          <Heading
-            size="lg"
-            mb={4}
-            color={colorMode === 'dark' ? 'dark.textPrimary' : 'calm.textPrimary'}
-          >
-            {song.name}
-          </Heading>
+        <Box flex="1" overflowY="auto">
+          <Box maxW="800px" mx="auto" p={8} pb={showMiniPlayer ? 24 : 8}>
+            {/* Title */}
+            <Heading
+              size="lg"
+              mb={4}
+              color={colorMode === 'dark' ? 'dark.textPrimary' : 'calm.textPrimary'}
+            >
+              {song.name}
+            </Heading>
 
-          {/* Playback controls */}
-          <HStack mb={4} spacing={2} justify="space-between" flexWrap="wrap">
-            <HStack spacing={2}>
-              <Button
+            {/* Playback controls */}
+            <HStack mb={4} spacing={2} justify="space-between" flexWrap="wrap">
+              <HStack spacing={2}>
+                <Button
+                  size="sm"
+                  leftIcon={<ChevronLeftIcon />}
+                  onClick={onPrev}
+                  isDisabled={!hasPrev || !onPrev}
+                >
+                  Prev
+                </Button>
+                <Button
+                  size="sm"
+                  rightIcon={<ChevronRightIcon />}
+                  onClick={onNext}
+                  isDisabled={!hasNext || !onNext}
+                >
+                  Next
+                </Button>
+              </HStack>
+
+              <IconButton
+                aria-label="Download audio"
+                icon={<DownloadIcon />}
                 size="sm"
-                leftIcon={<ChevronLeftIcon />}
-                onClick={onPrev}
-                isDisabled={!hasPrev || !onPrev}
-              >
-                Prev
-              </Button>
-              <Button
-                size="sm"
-                rightIcon={<ChevronRightIcon />}
-                onClick={onNext}
-                isDisabled={!hasNext || !onNext}
-              >
-                Next
-              </Button>
+                as="a"
+                href={song.imageUrl}
+                download={song.name}
+                target="_blank"
+              />
             </HStack>
 
-            <IconButton
-              aria-label="Download audio"
-              icon={<DownloadIcon />}
-              size="sm"
-              as="a"
-              href={song.imageUrl}
-              download={song.name}
-              target="_blank"
-            />
-          </HStack>
-
-          {/* Audio player */}
-          <Box
-            borderRadius="md"
-            bg={colorMode === 'dark' ? 'dark.surface' : 'calm.surface'}
-            p={4}
-          >
-            {song.imageUrl ? (
-              <audio
-                src={song.imageUrl}
-                controls
-                style={{ width: '100%' }}
-                onEnded={onNext}
-              />
-            ) : (
-              <Text color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}>
-                Audio URL not available
-              </Text>
-            )}
+            {/* Audio player */}
+            <Box
+              borderRadius="md"
+              bg={colorMode === 'dark' ? 'dark.surface' : 'calm.surface'}
+              p={4}
+            >
+              {song.imageUrl ? (
+                <audio
+                  src={song.imageUrl}
+                  controls
+                  style={{ width: '100%' }}
+                  onEnded={onNext}
+                />
+              ) : (
+                <Text color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}>
+                  Audio URL not available
+                </Text>
+              )}
+            </Box>
           </Box>
         </Box>
+        {miniPlayer}
       </Box>
     )
   }
@@ -474,9 +568,11 @@ export default function SongViewer({ song, loading, onPrev, onNext, hasPrev, has
       flex="1"
       h="100%"
       bg={colorMode === 'dark' ? 'dark.background' : 'calm.background'}
-      overflowY="auto"
+      display="flex"
+      flexDirection="column"
     >
-      <Box maxW="800px" mx="auto" p={8}>
+      <Box flex="1" overflowY="auto">
+        <Box maxW="800px" mx="auto" p={8} pb={showMiniPlayer ? 24 : 8}>
         {/* Language Tabs (only show if multi-language) */}
         {isMultiLanguage && availableLanguages.length > 1 && (
           <Tabs
@@ -662,6 +758,8 @@ export default function SongViewer({ song, loading, onPrev, onNext, hasPrev, has
           }}
         />
       </Box>
+      </Box>
+      {miniPlayer}
     </Box>
   )
 }
