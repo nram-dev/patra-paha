@@ -146,7 +146,7 @@ function App() {
   // Main app with routing
   return (
     <Routes>
-      <Route path="/" element={<CollectionSelector />} />
+      <Route path="/" element={<CollectionSelector onLogout={handleLogout} />} />
       <Route path="/add-collection" element={<AddCollection />} />
       <Route 
         path="/collection/:collectionId" 

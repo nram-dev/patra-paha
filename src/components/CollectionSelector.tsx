@@ -5,7 +5,11 @@ import { useEffect, useState } from 'react'
 import { useCollectionStore } from '../stores/collectionStore'
 import { scanCollection } from '../services/scanService'
 
-export const CollectionSelector = () => {
+type CollectionSelectorProps = {
+  onLogout: () => void
+}
+
+export const CollectionSelector = ({ onLogout }: CollectionSelectorProps) => {
   const navigate = useNavigate()
   const { collections, documentCounts, loadCollections, deleteCollection, scanErrors, setScanError, clearScanError, refreshDocumentCounts } = useCollectionStore()
   const [scanning, setScanning] = useState<Record<string, boolean>>({})
@@ -74,8 +78,17 @@ export const CollectionSelector = () => {
           <Text fontSize="md" color="calm.textSecondary">
             View Your Documents
           </Text>
-          {/* View Menu */}
-          <Box position="absolute" top={0} right={0}>
+          {/* Actions (Sign Out + View Menu) */}
+          <HStack position="absolute" top={0} right={0} spacing={2}>
+            <Text
+              as="button"
+              onClick={onLogout}
+              fontSize="sm"
+              color="calm.textSecondary"
+              _hover={{ color: 'calm.textPrimary' }}
+            >
+              Sign Out
+            </Text>
             <Menu>
               <MenuButton
                 as={Button}
@@ -97,7 +110,7 @@ export const CollectionSelector = () => {
                 </MenuItem>
               </MenuList>
             </Menu>
-          </Box>
+          </HStack>
         </Box>
 
         {/* Collections Grid */}

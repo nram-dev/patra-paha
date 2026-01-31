@@ -49,7 +49,8 @@ export async function scanCollection(collection: Collection): Promise<void> {
       f =>
         f.mimeType === 'application/vnd.google-apps.document' ||
         driveService.isImageFile(f.mimeType) ||
-        driveService.isPdfFile(f.mimeType)
+        driveService.isPdfFile(f.mimeType) ||
+        driveService.isAudioFile(f.mimeType, f.name)
     )
 
     categories.push({
@@ -65,9 +66,11 @@ export async function scanCollection(collection: Collection): Promise<void> {
     for (const file of supported) {
       const isImage = driveService.isImageFile(file.mimeType)
       const isPdf = driveService.isPdfFile(file.mimeType)
+      const isAudio = driveService.isAudioFile(file.mimeType, file.name)
       let contentType: 'text' | 'image' | 'pdf' | 'audio' = 'text'
       if (isImage) contentType = 'image'
       else if (isPdf) contentType = 'pdf'
+      else if (isAudio) contentType = 'audio'
 
       // Extract optional song ID from filename
       const songId = extractSongId(file.name)

@@ -15,6 +15,7 @@ Personal PWA for managing devotional song lyrics from Google Drive.
 - 🎯 **Progressive Enhancement** - Works without metadata, enhanced with it
 - 🌙 **Theme Support** - Calm and dark modes
 - 📱 **Responsive** - Optimized for 10" Android tablets (landscape)
+- 🎧 **Audio Playback** - Plays mp3/mp4/wav files with next/prev controls
 
 ## Tech Stack
 
@@ -121,7 +122,7 @@ The app expects the following structure in your Google Drive:
   /__Special__/   ← Non-deity folder (prefixed with __)
 ```
 
-**Note:** Folders starting with `__` are treated as non-deity folders and won't appear in the main navigation.
+**Note:** Folders starting with `__` are treated as non-deity folders and won't appear in the main navigation. Audio files (mp3/mp4/wav) in deity folders are supported alongside docs/images.
 
 ## Metadata Format (Optional)
 

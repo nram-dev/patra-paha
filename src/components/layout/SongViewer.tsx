@@ -16,9 +16,13 @@ pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/b
 interface SongViewerProps {
   song: Song | null
   loading: boolean
+  onPrev?: () => void
+  onNext?: () => void
+  hasPrev?: boolean
+  hasNext?: boolean
 }
 
-export default function SongViewer({ song, loading }: SongViewerProps) {
+export default function SongViewer({ song, loading, onPrev, onNext, hasPrev, hasNext }: SongViewerProps) {
   const { colorMode } = useColorMode()
   const [fontSize, setFontSize] = useState<'small' | 'medium' | 'large' | 'xlarge'>('medium')
   const [imageZoom, setImageZoom] = useState(100)
@@ -352,6 +356,81 @@ export default function SongViewer({ song, loading }: SongViewerProps) {
             ) : (
               <Text color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}>
                 Image URL not available
+              </Text>
+            )}
+          </Box>
+        </Box>
+      </Box>
+    )
+  }
+
+  // Handle audio display
+  if (song.contentType === 'audio') {
+    return (
+      <Box
+        flex="1"
+        h="100%"
+        bg={colorMode === 'dark' ? 'dark.background' : 'calm.background'}
+        overflowY="auto"
+      >
+        <Box maxW="800px" mx="auto" p={8}>
+          {/* Title */}
+          <Heading
+            size="lg"
+            mb={4}
+            color={colorMode === 'dark' ? 'dark.textPrimary' : 'calm.textPrimary'}
+          >
+            {song.name}
+          </Heading>
+
+          {/* Playback controls */}
+          <HStack mb={4} spacing={2} justify="space-between" flexWrap="wrap">
+            <HStack spacing={2}>
+              <Button
+                size="sm"
+                leftIcon={<ChevronLeftIcon />}
+                onClick={onPrev}
+                isDisabled={!hasPrev || !onPrev}
+              >
+                Prev
+              </Button>
+              <Button
+                size="sm"
+                rightIcon={<ChevronRightIcon />}
+                onClick={onNext}
+                isDisabled={!hasNext || !onNext}
+              >
+                Next
+              </Button>
+            </HStack>
+
+            <IconButton
+              aria-label="Download audio"
+              icon={<DownloadIcon />}
+              size="sm"
+              as="a"
+              href={song.imageUrl}
+              download={song.name}
+              target="_blank"
+            />
+          </HStack>
+
+          {/* Audio player */}
+          <Box
+            borderRadius="md"
+            bg={colorMode === 'dark' ? 'dark.surface' : 'calm.surface'}
+            p={4}
+          >
+            {song.imageUrl ? (
+              <audio
+                src={song.imageUrl}
+                controls
+                style={{ width: '100%' }}
+                onEnded={onNext}
+              />
+            ) : (
+              <Text color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}>
+                Audio URL not available
               </Text>
             )}
           </Box>

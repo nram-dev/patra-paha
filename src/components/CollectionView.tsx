@@ -1,6 +1,6 @@
 import { Box, IconButton, useToast } from '@chakra-ui/react'
 import { ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { driveService } from '../services/driveService'
 import { db } from '../db/database'
@@ -9,11 +9,12 @@ import Navigation from './layout/Navigation'
 import SongList from './layout/SongList'
 import SongViewer from './layout/SongViewer'
 import Search from './Search'
-import { Deity, Song, TitleLanguage, Document, Category } from '../types'
+import { Deity, Song, TitleLanguage, Document, Category, SortOption } from '../types'
 import { useCollectionStore } from '../stores/collectionStore'
 import { getCollectionConfig } from '../config/collections'
 import { parseMultiLanguageContent } from '../services/metadataParser'
 import { extractSongId } from '../utils/songId'
+import { getSongTitle } from '../utils/songTitle'
 
 interface CollectionViewProps {
   onLogout: () => void
@@ -37,6 +38,7 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
   const [isColumn1Collapsed, setIsColumn1Collapsed] = useState(false)
   const [isColumn2Collapsed, setIsColumn2Collapsed] = useState(false)
   const [showEmptyCategories, setShowEmptyCategories] = useState(false)
+  const [sortBy, setSortBy] = useState<SortOption>('alphabetical')
 
   // Get collection config
   const collection = collections.find(c => c.id === collectionId)
@@ -164,7 +166,6 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
     setShowingFavorites(false)
     
     try {
-      setLoading(true)
       if (collectionId) {
         clearScanError(collectionId)
       }
@@ -179,28 +180,33 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
         .and(doc => doc.category === deity.name)
         .toArray()
       
-      if (cachedDocs.length > 0) {
+      const hasCache = cachedDocs.length > 0
+      if (hasCache) {
         setSongs(cachedDocs)
-        setLoading(false)
-        return
       }
+
+      // Only show loading state when we have no cache
+      setLoading(!hasCache)
       
-      // Load from Drive root folder
+      // Load from Drive root folder (refresh even with cache to pick up audio)
       const files = await driveService.listFiles(targetFolderId)
         
       const supportedFiles = files.filter(f => 
         f.mimeType === 'application/vnd.google-apps.document' ||
         driveService.isImageFile(f.mimeType) ||
-        driveService.isPdfFile(f.mimeType)
+        driveService.isPdfFile(f.mimeType) ||
+        driveService.isAudioFile(f.mimeType, f.name)
       )
       
       const docList: Document[] = supportedFiles.map(file => {
         const isImage = driveService.isImageFile(file.mimeType)
         const isPdf = driveService.isPdfFile(file.mimeType)
+        const isAudio = driveService.isAudioFile(file.mimeType, file.name)
         
         let contentType: 'text' | 'image' | 'pdf' | 'audio' = 'text'
         if (isImage) contentType = 'image'
         else if (isPdf) contentType = 'pdf'
+        else if (isAudio) contentType = 'audio'
         
         // Extract optional song ID from filename
         const songId = extractSongId(file.name)
@@ -282,8 +288,8 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
       lastViewed: updatedViewData.lastViewed,
     })
 
-    // Handle PDF and image files - fetch blob URL to bypass CORS
-    if (song.contentType === 'pdf' || song.contentType === 'image') {
+    // Handle PDF, image, and audio files - fetch blob URL to bypass CORS
+    if (song.contentType === 'pdf' || song.contentType === 'image' || song.contentType === 'audio') {
       try {
         setLoading(true)
         // Fetch blob URL (bypasses CORS issues with direct Google Drive URLs)
@@ -382,6 +388,44 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
       } catch (error) {
         console.error('Failed to re-parse cached content:', error)
       }
+    }
+  }
+
+  const sortedSongs = useMemo(() => {
+    const songsCopy = [...songs]
+    
+    switch (sortBy) {
+      case 'alphabetical':
+        return songsCopy.sort((a, b) => {
+          const titleA = getSongTitle(a, language).toLowerCase()
+          const titleB = getSongTitle(b, language).toLowerCase()
+          return titleA.localeCompare(titleB)
+        })
+      case 'recent':
+        return songsCopy.sort((a, b) => {
+          if (!a.lastViewed) return 1
+          if (!b.lastViewed) return -1
+          return new Date(b.lastViewed).getTime() - new Date(a.lastViewed).getTime()
+        })
+      case 'mostViewed':
+        return songsCopy.sort((a, b) => (b.viewCount || 0) - (a.viewCount || 0))
+      case 'recentlyModified':
+        return songsCopy.sort((a, b) => 
+          new Date(b.modifiedTime).getTime() - new Date(a.modifiedTime).getTime()
+        )
+      default:
+        return songsCopy
+    }
+  }, [songs, sortBy, language])
+
+  const handleAdjacentSelect = (direction: 'prev' | 'next') => {
+    if (!selectedSong) return
+    const currentIndex = sortedSongs.findIndex(song => song.id === selectedSong.id)
+    if (currentIndex === -1) return
+    const nextIndex = direction === 'next' ? currentIndex + 1 : currentIndex - 1
+    const nextSong = sortedSongs[nextIndex]
+    if (nextSong) {
+      handleSongSelect(nextSong)
     }
   }
 
@@ -499,12 +543,14 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
         {/* Column 2: Song List */}
         {!isColumn2Collapsed && (
           <SongList
-            songs={songs}
+            songs={sortedSongs}
             selectedSong={selectedSong}
             onSongSelect={handleSongSelect}
             onToggleFavorite={handleToggleFavorite}
             language={language}
             loading={loading}
+            sortBy={sortBy}
+            onSortChange={setSortBy}
             categoryLabel={itemLabel}
             itemsLabel={itemsLabel}
           />
@@ -535,6 +581,10 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
         <SongViewer
           song={selectedSong}
           loading={loading}
+          onPrev={selectedSong?.contentType === 'audio' ? () => handleAdjacentSelect('prev') : undefined}
+          onNext={selectedSong?.contentType === 'audio' ? () => handleAdjacentSelect('next') : undefined}
+          hasPrev={selectedSong ? sortedSongs.findIndex(song => song.id === selectedSong.id) > 0 : false}
+          hasNext={selectedSong ? sortedSongs.findIndex(song => song.id === selectedSong.id) < sortedSongs.length - 1 : false}
         />
       </Box>
       

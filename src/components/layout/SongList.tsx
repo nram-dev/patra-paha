@@ -3,7 +3,7 @@ import { useColorMode } from '@chakra-ui/react'
 import { StarIcon, ChevronDownIcon } from '@chakra-ui/icons'
 import { Song, TitleLanguage, SortOption } from '../../types'
 import { getSongTitle } from '../../utils/songTitle'
-import { useState, useMemo } from 'react'
+import { useMemo } from 'react'
 
 interface SongListProps {
   songs: Song[]
@@ -12,6 +12,8 @@ interface SongListProps {
   onToggleFavorite: (song: Song) => void
   language: TitleLanguage
   loading: boolean
+  sortBy: SortOption
+  onSortChange: (sortBy: SortOption) => void
   categoryLabel?: string  // e.g., "deity" or "category"
   itemsLabel?: string     // e.g., "Songs" or "Items"
 }
@@ -23,11 +25,12 @@ export default function SongList({
   onToggleFavorite,
   language,
   loading,
+  sortBy,
+  onSortChange,
   categoryLabel = 'deity',
   itemsLabel = 'Songs',
 }: SongListProps) {
   const { colorMode } = useColorMode()
-  const [sortBy, setSortBy] = useState<SortOption>('alphabetical')
 
   const sortOptions: Record<SortOption, string> = {
     alphabetical: 'Alphabetical',
@@ -36,33 +39,7 @@ export default function SongList({
     recentlyModified: 'Recently Modified',
   }
 
-  // Sort songs based on selected option
-  const sortedSongs = useMemo(() => {
-    const songsCopy = [...songs]
-    
-    switch (sortBy) {
-      case 'alphabetical':
-        return songsCopy.sort((a, b) => {
-          const titleA = getSongTitle(a, language).toLowerCase()
-          const titleB = getSongTitle(b, language).toLowerCase()
-          return titleA.localeCompare(titleB)
-        })
-      case 'recent':
-        return songsCopy.sort((a, b) => {
-          if (!a.lastViewed) return 1
-          if (!b.lastViewed) return -1
-          return new Date(b.lastViewed).getTime() - new Date(a.lastViewed).getTime()
-        })
-      case 'mostViewed':
-        return songsCopy.sort((a, b) => (b.viewCount || 0) - (a.viewCount || 0))
-      case 'recentlyModified':
-        return songsCopy.sort((a, b) => 
-          new Date(b.modifiedTime).getTime() - new Date(a.modifiedTime).getTime()
-        )
-      default:
-        return songsCopy
-    }
-  }, [songs, sortBy, language])
+  const sortedSongs = useMemo(() => songs, [songs])
 
   if (!songs.length && !loading) {
     return (
@@ -122,7 +99,7 @@ export default function SongList({
               {Object.entries(sortOptions).map(([key, label]) => (
                 <MenuItem
                   key={key}
-                  onClick={() => setSortBy(key as SortOption)}
+                  onClick={() => onSortChange(key as SortOption)}
                   fontSize="sm"
                   bg={sortBy === key ? (colorMode === 'dark' ? 'dark.accent' : 'calm.accent') : 'transparent'}
                   color={sortBy === key ? 'white' : undefined}

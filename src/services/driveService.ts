@@ -226,6 +226,28 @@ export class DriveService {
   }
 
   /**
+   * Check if file is an audio file (mp3, mp4, wav)
+   * Uses MIME type primarily, with filename fallback for generic types.
+   */
+  isAudioFile(mimeType: string, fileName?: string): boolean {
+    if (mimeType.startsWith('audio/')) {
+      return true
+    }
+
+    // MP4 audio can be reported as video/mp4 in Drive
+    if (mimeType === 'video/mp4') {
+      return true
+    }
+
+    if (fileName) {
+      const lower = fileName.toLowerCase()
+      return lower.endsWith('.mp3') || lower.endsWith('.mp4') || lower.endsWith('.wav')
+    }
+
+    return false
+  }
+
+  /**
    * Get PDF URL
    */
   getPdfUrl(fileId: string): string {
