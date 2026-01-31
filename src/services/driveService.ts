@@ -192,6 +192,26 @@ export class DriveService {
   }
 
   /**
+   * Download PDF as blob
+   */
+  async downloadPdfAsBlob(fileId: string): Promise<Blob> {
+    const url = `${DRIVE_API_BASE}/files/${fileId}?alt=media`
+    const response = await this.makeRequest(url)
+    return await response.blob()
+  }
+
+  /**
+   * Download any file as blob and return a blob URL
+   * This bypasses CORS issues with direct Google Drive URLs
+   */
+  async getFileBlobUrl(fileId: string): Promise<string> {
+    const url = `${DRIVE_API_BASE}/files/${fileId}?alt=media`
+    const response = await this.makeRequest(url)
+    const blob = await response.blob()
+    return URL.createObjectURL(blob)
+  }
+
+  /**
    * Check if file is an image
    */
   isImageFile(mimeType: string): boolean {

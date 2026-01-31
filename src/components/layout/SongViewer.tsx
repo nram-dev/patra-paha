@@ -89,6 +89,16 @@ export default function SongViewer({ song, loading }: SongViewerProps) {
     }
   }, [isMultiLanguage, availableLanguages, selectedLanguage])
 
+  // Cleanup blob URLs when component unmounts or song changes
+  useEffect(() => {
+    return () => {
+      // Revoke blob URL to prevent memory leaks
+      if (song?.imageUrl?.startsWith('blob:')) {
+        URL.revokeObjectURL(song.imageUrl)
+      }
+    }
+  }, [song?.imageUrl])
+
   // Get current language content
   const currentLanguageContent = useMemo(() => {
     if (!song?.content) return ''

@@ -264,7 +264,7 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
 
   const handleSongSelect = async (song: Song) => {
     setSelectedSong(song)
-    
+
     const updatedViewData = {
       ...song,
       viewCount: (song.viewCount || 0) + 1,
@@ -274,7 +274,27 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
       viewCount: updatedViewData.viewCount,
       lastViewed: updatedViewData.lastViewed,
     })
-    
+
+    // Handle PDF and image files - fetch blob URL to bypass CORS
+    if (song.contentType === 'pdf' || song.contentType === 'image') {
+      try {
+        setLoading(true)
+        // Fetch blob URL (bypasses CORS issues with direct Google Drive URLs)
+        const blobUrl = await driveService.getFileBlobUrl(song.driveFileId)
+        const updatedSong = {
+          ...updatedViewData,
+          imageUrl: blobUrl,
+        }
+        setSelectedSong(updatedSong)
+        // Note: We don't cache blob URLs in DB as they're temporary
+      } catch (error) {
+        console.error('Failed to load file:', error)
+      } finally {
+        setLoading(false)
+      }
+      return
+    }
+
     if (!song.content && song.contentType === 'text') {
       try {
         setLoading(true)
