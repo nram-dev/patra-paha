@@ -20,11 +20,6 @@ interface SongViewerProps {
   onNext?: () => void
   hasPrev?: boolean
   hasNext?: boolean
-  nowPlayingSong?: Song | null
-  onAudioPrev?: () => void
-  onAudioNext?: () => void
-  hasAudioPrev?: boolean
-  hasAudioNext?: boolean
 }
 
 export default function SongViewer({
@@ -34,75 +29,8 @@ export default function SongViewer({
   onNext,
   hasPrev,
   hasNext,
-  nowPlayingSong,
-  onAudioPrev,
-  onAudioNext,
-  hasAudioPrev,
-  hasAudioNext,
 }: SongViewerProps) {
   const { colorMode } = useColorMode()
-  const showMiniPlayer = Boolean(nowPlayingSong)
-  const miniPlayer = showMiniPlayer ? (
-    <Box
-      position="sticky"
-      bottom="0"
-      zIndex={2}
-      borderTop="1px solid"
-      borderColor={colorMode === 'dark' ? 'dark.border' : 'gray.200'}
-      bg={colorMode === 'dark' ? 'dark.surface' : 'calm.surface'}
-      px={4}
-      py={3}
-      pb="calc(env(safe-area-inset-bottom, 0px) + 12px)"
-    >
-      <HStack spacing={3} mb={2} justify="space-between" flexWrap="wrap">
-        <Text
-          fontSize="sm"
-          color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}
-        >
-          Now Playing: {nowPlayingSong?.name || 'Audio'}
-        </Text>
-        <HStack spacing={2}>
-          <Button
-            size="xs"
-            leftIcon={<ChevronLeftIcon />}
-            onClick={onAudioPrev}
-            isDisabled={!hasAudioPrev || !onAudioPrev}
-          >
-            Prev
-          </Button>
-          <Button
-            size="xs"
-            rightIcon={<ChevronRightIcon />}
-            onClick={onAudioNext}
-            isDisabled={!hasAudioNext || !onAudioNext}
-          >
-            Next
-          </Button>
-          <IconButton
-            aria-label="Download audio"
-            icon={<DownloadIcon />}
-            size="xs"
-            as="a"
-            href={nowPlayingSong?.imageUrl}
-            download={nowPlayingSong?.name}
-            target="_blank"
-          />
-        </HStack>
-      </HStack>
-      {nowPlayingSong?.imageUrl ? (
-        <audio
-          src={nowPlayingSong.imageUrl}
-          controls
-          style={{ width: '100%' }}
-          onEnded={onAudioNext}
-        />
-      ) : (
-        <Text color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}>
-          Audio URL not available
-        </Text>
-      )}
-    </Box>
-  ) : null
 
   const [fontSize, setFontSize] = useState<'small' | 'medium' | 'large' | 'xlarge'>('medium')
   const [imageZoom, setImageZoom] = useState(100)
@@ -252,7 +180,7 @@ export default function SongViewer({
         flexDirection="column"
       >
         <Box flex="1" overflowY="auto">
-          <Box maxW="1200px" mx="auto" p={8} pb={showMiniPlayer ? 24 : 8}>
+          <Box maxW="1200px" mx="auto" p={8} pb={8}>
             {/* Title */}
             <Heading
               size="lg"
@@ -362,7 +290,6 @@ export default function SongViewer({
             </Box>
           </Box>
         </Box>
-        {miniPlayer}
     </Box>
     )
   }
@@ -378,7 +305,7 @@ export default function SongViewer({
         flexDirection="column"
       >
         <Box flex="1" overflowY="auto">
-          <Box maxW="1200px" mx="auto" p={8} pb={showMiniPlayer ? 24 : 8}>
+          <Box maxW="1200px" mx="auto" p={8} pb={8}>
             {/* Title */}
             <Heading
               size="lg"
@@ -449,7 +376,6 @@ export default function SongViewer({
             </Box>
           </Box>
         </Box>
-        {miniPlayer}
       </Box>
     )
   }
@@ -465,7 +391,7 @@ export default function SongViewer({
         flexDirection="column"
       >
         <Box flex="1" overflowY="auto">
-          <Box maxW="800px" mx="auto" p={8} pb={showMiniPlayer ? 24 : 8}>
+          <Box maxW="800px" mx="auto" p={8} pb={8}>
             {/* Title */}
             <Heading
               size="lg"
@@ -528,7 +454,6 @@ export default function SongViewer({
             </Box>
           </Box>
         </Box>
-        {miniPlayer}
       </Box>
     )
   }
@@ -572,7 +497,7 @@ export default function SongViewer({
       flexDirection="column"
     >
       <Box flex="1" overflowY="auto">
-        <Box maxW="800px" mx="auto" p={8} pb={showMiniPlayer ? 24 : 8}>
+        <Box maxW="800px" mx="auto" p={8} pb={8}>
         {/* Language Tabs (only show if multi-language) */}
         {isMultiLanguage && availableLanguages.length > 1 && (
           <Tabs
@@ -759,7 +684,6 @@ export default function SongViewer({
         />
       </Box>
       </Box>
-      {miniPlayer}
     </Box>
   )
 }

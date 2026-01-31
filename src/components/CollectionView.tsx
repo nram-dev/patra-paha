@@ -8,6 +8,7 @@ import Header from './layout/Header'
 import Navigation from './layout/Navigation'
 import SongList from './layout/SongList'
 import SongViewer from './layout/SongViewer'
+import AudioPanel from './layout/AudioPanel'
 import Search from './Search'
 import { Deity, Song, TitleLanguage, Document, Category, SortOption } from '../types'
 import { useCollectionStore } from '../stores/collectionStore'
@@ -35,6 +36,7 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
   const [audioBlobUrl, setAudioBlobUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [viewerLoading, setViewerLoading] = useState(false)
+  const [audioLoading, setAudioLoading] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [allSongs, setAllSongs] = useState<Song[]>([])
   const [showingFavorites, setShowingFavorites] = useState(false)
@@ -423,7 +425,7 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
     const updatedViewData = await updateViewData(song)
 
     try {
-      setViewerLoading(true)
+      setAudioLoading(true)
       const blobUrl = await driveService.getFileBlobUrl(song.driveFileId)
       const updatedSong = {
         ...updatedViewData,
@@ -434,7 +436,7 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
     } catch (error) {
       console.error('Failed to load audio:', error)
     } finally {
-      setViewerLoading(false)
+      setAudioLoading(false)
     }
   }
 
@@ -804,20 +806,34 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
           transition="all 0.3s"
         />
 
-        {/* Column 3: Song Viewer */}
-        <SongViewer
-          song={selectedSong}
-          loading={viewerLoading}
-          onPrev={selectedSong ? () => handleAdjacentSelect('prev') : undefined}
-          onNext={selectedSong ? () => handleAdjacentSelect('next') : undefined}
-          hasPrev={selectedSong ? viewableSongs.findIndex(song => song.id === selectedSong.id) > 0 : false}
-          hasNext={selectedSong ? viewableSongs.findIndex(song => song.id === selectedSong.id) < viewableSongs.length - 1 : false}
-          nowPlayingSong={nowPlayingSong}
-          onAudioPrev={nowPlayingSong ? () => handleAudioAdjacentSelect('prev') : undefined}
-          onAudioNext={nowPlayingSong ? () => handleAudioAdjacentSelect('next') : undefined}
-          hasAudioPrev={nowPlayingSong ? audioQueue.findIndex(song => song.id === nowPlayingSong.id) > 0 : false}
-          hasAudioNext={nowPlayingSong ? audioQueue.findIndex(song => song.id === nowPlayingSong.id) < audioQueue.length - 1 : false}
-        />
+        {/* Column 3: Doc + Audio Viewer */}
+        <Box flex="1" display="flex" flexDirection="column" minW="0">
+          <Box flex="1" minH="0" display="flex">
+            <SongViewer
+              song={selectedSong}
+              loading={viewerLoading}
+              onPrev={selectedSong ? () => handleAdjacentSelect('prev') : undefined}
+              onNext={selectedSong ? () => handleAdjacentSelect('next') : undefined}
+              hasPrev={selectedSong ? viewableSongs.findIndex(song => song.id === selectedSong.id) > 0 : false}
+              hasNext={selectedSong ? viewableSongs.findIndex(song => song.id === selectedSong.id) < viewableSongs.length - 1 : false}
+            />
+          </Box>
+          <Box
+            h="180px"
+            borderTop="1px"
+            borderColor={colorMode === 'dark' ? 'dark.border' : 'calm.border'}
+            flexShrink={0}
+          >
+            <AudioPanel
+              nowPlayingSong={nowPlayingSong}
+              loading={audioLoading}
+              onPrev={nowPlayingSong ? () => handleAudioAdjacentSelect('prev') : undefined}
+              onNext={nowPlayingSong ? () => handleAudioAdjacentSelect('next') : undefined}
+              hasPrev={nowPlayingSong ? audioQueue.findIndex(song => song.id === nowPlayingSong.id) > 0 : false}
+              hasNext={nowPlayingSong ? audioQueue.findIndex(song => song.id === nowPlayingSong.id) < audioQueue.length - 1 : false}
+            />
+          </Box>
+        </Box>
       </Box>
       
       <Search
