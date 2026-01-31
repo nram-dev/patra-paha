@@ -128,7 +128,7 @@ export default function SongViewer({ song, loading }: SongViewerProps) {
         <Text
           color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}
         >
-          Select a song to view
+          Select an item to view
         </Text>
       </Box>
     )

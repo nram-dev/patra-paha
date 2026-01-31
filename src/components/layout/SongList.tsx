@@ -78,7 +78,7 @@ export default function SongList({
           fontSize="sm"
           color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}
         >
-          Select a {categoryLabel} to view {itemsLabel.toLowerCase()}
+          Select a Category to view items
         </Text>
       </Box>
     )
