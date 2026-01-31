@@ -5,6 +5,7 @@ import { Song, MultiLanguageContent } from '../../types'
 import { parseMetadata } from '../../services/metadataParser'
 import { normalizeHtmlContent } from '../../services/contentNormalizer'
 import { useState, useMemo, useEffect } from 'react'
+import { extractFirstYouTubeUrl } from '../../utils/extractYouTubeUrl'
 import { Document, Page, pdfjs } from 'react-pdf'
 import { db } from '../../db/database'
 import 'react-pdf/dist/Page/AnnotationLayer.css'
@@ -19,6 +20,8 @@ interface SongViewerProps {
   externalUrl?: string | null
   externalTitle?: string | null
   onClearExternal?: () => void
+  onDetectedExternalUrl?: (url: string | null) => void
+  onExternalUrlSelect?: (url: string) => void
   onPrev?: () => void
   onNext?: () => void
   hasPrev?: boolean
@@ -31,6 +34,8 @@ export default function SongViewer({
   externalUrl,
   externalTitle,
   onClearExternal,
+  onDetectedExternalUrl,
+  onExternalUrlSelect,
   onPrev,
   onNext,
   hasPrev,
@@ -131,6 +136,31 @@ export default function SongViewer({
     // Single language content should be a string
     return typeof song.content === 'string' ? song.content : ''
   }, [song?.content, isMultiLanguage, selectedLanguage, availableLanguages])
+
+  // Parse metadata and content for text songs
+  // currentLanguageContent is already a string (extracted from MultiLanguageContent if needed)
+  const rawContent = typeof currentLanguageContent === 'string' ? currentLanguageContent : ''
+
+  // For multi-language content, metadata is already extracted, so just get lyrics
+  // For single-language content, parse metadata
+  let lyrics = rawContent
+  let parsedMetadata = song?.metadata || {}
+  if (!isMultiLanguage) {
+    const parsed = parseMetadata(rawContent)
+    lyrics = parsed.lyrics
+    parsedMetadata = parsed.metadata || parsedMetadata
+  }
+
+  const normalizedHtml = normalizeHtmlContent(lyrics, colorMode === 'dark' ? 'dark' : 'calm')
+
+  const detectedExternalUrl = useMemo(() => {
+    return extractFirstYouTubeUrl([song?.metadata?.youtube, parsedMetadata?.youtube, rawContent, normalizedHtml])
+  }, [song?.metadata?.youtube, parsedMetadata, rawContent, normalizedHtml])
+
+  useEffect(() => {
+    if (!onDetectedExternalUrl) return
+    onDetectedExternalUrl(detectedExternalUrl)
+  }, [detectedExternalUrl, onDetectedExternalUrl])
 
   if (externalUrl) {
     return (
@@ -524,21 +554,8 @@ export default function SongViewer({
     )
   }
 
-  // Parse metadata and content for text songs
-  // currentLanguageContent is already a string (extracted from MultiLanguageContent if needed)
-  const rawContent = typeof currentLanguageContent === 'string' ? currentLanguageContent : ''
-  
-  // For multi-language content, metadata is already extracted, so just get lyrics
-  // For single-language content, parse metadata
-  let lyrics = rawContent
-  let parsedMetadata = song?.metadata || {}
-  if (!isMultiLanguage) {
-    const parsed = parseMetadata(rawContent)
-    lyrics = parsed.lyrics
-    parsedMetadata = parsed.metadata || parsedMetadata
-  }
-  
-  const normalizedHtml = normalizeHtmlContent(lyrics, colorMode === 'dark' ? 'dark' : 'calm')
+  const youtubeUrl = parsedMetadata?.youtube || song?.metadata?.youtube || null
+  const normalizedYoutubeUrl = youtubeUrl ? extractFirstYouTubeUrl([youtubeUrl]) ?? youtubeUrl : null
 
   // Language label mapping (in native scripts)
   const languageLabels: Record<string, string> = {
@@ -662,16 +679,25 @@ export default function SongViewer({
                 <strong>Tags:</strong> {(song.metadata?.tags || parsedMetadata?.tags)?.join(', ')}
               </Text>
             )}
-            {(song.metadata?.youtube || parsedMetadata?.youtube) && (
+            {normalizedYoutubeUrl && (
               <Text fontSize="sm">
                 <strong>YouTube:</strong>{' '}
                 <Text
                   as="a"
-                  href={song.metadata?.youtube || parsedMetadata?.youtube}
+                  href={normalizedYoutubeUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   color={colorMode === 'dark' ? 'dark.accent' : 'calm.accent'}
                   _hover={{ textDecoration: 'underline' }}
+                  onClick={(event) => {
+                    event.preventDefault()
+                    event.stopPropagation()
+                    if (onExternalUrlSelect) {
+                      onExternalUrlSelect(normalizedYoutubeUrl)
+                    } else {
+                      window.open(normalizedYoutubeUrl, '_blank', 'noopener,noreferrer')
+                    }
+                  }}
                 >
                   🎵 Watch
                 </Text>
@@ -736,6 +762,20 @@ export default function SongViewer({
           color={colorMode === 'dark' ? 'dark.textPrimary' : 'calm.textPrimary'}
           whiteSpace="pre-wrap"
           dangerouslySetInnerHTML={{ __html: normalizedHtml }}
+          onClick={(event) => {
+            const target = event.target as HTMLElement | null
+            const anchor = target?.closest?.('a') as HTMLAnchorElement | null
+            if (!anchor?.href) return
+            const extracted = extractFirstYouTubeUrl([anchor.href])
+            if (!extracted) return
+            event.preventDefault()
+            event.stopPropagation()
+            if (onExternalUrlSelect) {
+              onExternalUrlSelect(extracted)
+            } else {
+              window.open(extracted, '_blank', 'noopener,noreferrer')
+            }
+          }}
           sx={{
             '& p': {
               marginBottom: '1em',

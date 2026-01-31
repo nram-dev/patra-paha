@@ -16,6 +16,27 @@ import { getCollectionConfig } from '../config/collections'
 import { parseMultiLanguageContent } from '../services/metadataParser'
 import { extractSongId } from '../utils/songId'
 import { getSongTitle } from '../utils/songTitle'
+import { extractFirstYouTubeUrl } from '../utils/extractYouTubeUrl'
+
+const extractFirstYouTubeUrlFromSong = (song: Song | null): string | null => {
+  if (!song) return null
+
+  const metadataUrl = song.metadata?.youtube?.trim()
+  if (metadataUrl) {
+    return extractFirstYouTubeUrl([metadataUrl]) ?? metadataUrl
+  }
+
+  const contentValues: string[] = []
+  if (typeof song.content === 'string') {
+    contentValues.push(song.content)
+  } else if (song.content && typeof song.content === 'object') {
+    Object.values(song.content).forEach((value) => {
+      if (typeof value === 'string') contentValues.push(value)
+    })
+  }
+
+  return extractFirstYouTubeUrl(contentValues)
+}
 
 interface CollectionViewProps {
   onLogout: () => void
@@ -37,6 +58,7 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
   const [loading, setLoading] = useState(false)
   const [viewerLoading, setViewerLoading] = useState(false)
   const [audioLoading, setAudioLoading] = useState(false)
+  const [audioPanelHeight, setAudioPanelHeight] = useState(180)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [allSongs, setAllSongs] = useState<Song[]>([])
   const [showingFavorites, setShowingFavorites] = useState(false)
@@ -49,6 +71,16 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
   const [externalUrlTitle, setExternalUrlTitle] = useState<string | null>(null)
   const [urlInput, setUrlInput] = useState('')
   const [recentUrls, setRecentUrls] = useState<Array<{ title: string; url: string; lastUsed: string }>>([])
+  const [docExternalUrl, setDocExternalUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    setDocExternalUrl(null)
+  }, [selectedSong?.id])
+
+  const autoExternalUrl = useMemo(
+    () => docExternalUrl ?? extractFirstYouTubeUrlFromSong(selectedSong),
+    [docExternalUrl, selectedSong]
+  )
 
   const sortOptions: Record<SortOption, string> = {
     alphabetical: 'Alphabetical',
@@ -968,6 +1000,10 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
               loading={viewerLoading}
               externalUrl={externalUrl}
               externalTitle={externalUrlTitle}
+              onDetectedExternalUrl={setDocExternalUrl}
+              onExternalUrlSelect={(url) => {
+                setDocExternalUrl(url)
+              }}
               onClearExternal={() => {
                 setExternalUrl(null)
                 setExternalUrlTitle(null)
@@ -979,7 +1015,7 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
             />
           </Box>
           <Box
-            h="180px"
+            h={`${audioPanelHeight}px`}
             borderTop="1px"
             borderColor={colorMode === 'dark' ? 'dark.border' : 'calm.border'}
             flexShrink={0}
@@ -987,10 +1023,13 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
             <AudioPanel
               nowPlayingSong={nowPlayingSong}
               loading={audioLoading}
+              panelHeight={audioPanelHeight}
+              onHeightChange={setAudioPanelHeight}
               onPrev={nowPlayingSong ? () => handleAudioAdjacentSelect('prev') : undefined}
               onNext={nowPlayingSong ? () => handleAudioAdjacentSelect('next') : undefined}
               hasPrev={nowPlayingSong ? audioQueue.findIndex(song => song.id === nowPlayingSong.id) > 0 : false}
               hasNext={nowPlayingSong ? audioQueue.findIndex(song => song.id === nowPlayingSong.id) < audioQueue.length - 1 : false}
+              autoExternalUrl={autoExternalUrl}
             />
           </Box>
         </Box>
