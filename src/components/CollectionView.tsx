@@ -1,5 +1,5 @@
-import { Box, IconButton, useToast, HStack, Text, Spinner, VStack, Menu, MenuButton, MenuList, MenuItem, Button, useColorMode } from '@chakra-ui/react'
-import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon } from '@chakra-ui/icons'
+import { Box, IconButton, useToast, HStack, Text, Spinner, VStack, Menu, MenuButton, MenuList, MenuItem, Button, useColorMode, Input, Select } from '@chakra-ui/react'
+import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon, ExternalLinkIcon, CloseIcon, DeleteIcon } from '@chakra-ui/icons'
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { driveService } from '../services/driveService'
@@ -45,6 +45,10 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
   const [isColumn2Collapsed, setIsColumn2Collapsed] = useState(false)
   const [showEmptyCategories, setShowEmptyCategories] = useState(false)
   const [sortBy, setSortBy] = useState<SortOption>('alphabetical')
+  const [externalUrl, setExternalUrl] = useState<string | null>(null)
+  const [externalUrlTitle, setExternalUrlTitle] = useState<string | null>(null)
+  const [urlInput, setUrlInput] = useState('')
+  const [recentUrls, setRecentUrls] = useState<Array<{ title: string; url: string; lastUsed: string }>>([])
 
   const sortOptions: Record<SortOption, string> = {
     alphabetical: 'Alphabetical',
@@ -149,6 +153,20 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
     setIsColumn2Collapsed(col2Collapsed)
     setShowEmptyCategories(emptyCategories)
   }, [])
+
+  useEffect(() => {
+    if (!collectionId) return
+    const stored = localStorage.getItem(`recentUrls:${collectionId}`)
+    if (!stored) return
+    try {
+      const parsed = JSON.parse(stored) as Array<{ title: string; url: string; lastUsed: string }>
+      if (Array.isArray(parsed)) {
+        setRecentUrls(parsed)
+      }
+    } catch {
+      // Ignore malformed storage
+    }
+  }, [collectionId])
 
   // Cleanup audio blob URLs when track changes/unmounts
   useEffect(() => {
@@ -313,6 +331,8 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
 
   const handleContentSelect = async (song: Song) => {
     if (song.contentType === 'audio') return
+    setExternalUrl(null)
+    setExternalUrlTitle(null)
     setSelectedSong(song)
 
     const updatedViewData = await updateViewData(song)
@@ -422,6 +442,8 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
 
   const handleAudioSelect = async (song: Song) => {
     if (song.contentType !== 'audio') return
+    setExternalUrl(null)
+    setExternalUrlTitle(null)
     const updatedViewData = await updateViewData(song)
 
     try {
@@ -509,6 +531,8 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
   }
 
   const handleSearchSongSelect = async (song: Song) => {
+    setExternalUrl(null)
+    setExternalUrlTitle(null)
     const deity = deities.find(d => d.name === song.category)
     if (deity) {
       setSelectedDeity(deity)
@@ -569,6 +593,53 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
     const newState = !showEmptyCategories
     setShowEmptyCategories(newState)
     localStorage.setItem('showEmptyCategories', String(newState))
+  }
+
+  const normalizeUrlInput = (value: string) => {
+    const trimmed = value.trim()
+    if (!trimmed) return null
+    try {
+      return new URL(trimmed).toString()
+    } catch {
+      try {
+        return new URL(`https://${trimmed}`).toString()
+      } catch {
+        return null
+      }
+    }
+  }
+
+  const openExternalUrl = (value: string) => {
+    if (!collectionId) return
+    const normalized = normalizeUrlInput(value)
+    if (!normalized) {
+      toast({
+        title: 'Invalid URL',
+        description: 'Enter a valid URL to open in the viewer.',
+        status: 'warning',
+        duration: 3000,
+      })
+      return
+    }
+
+    const derivedTitle = (() => {
+      try {
+        return new URL(normalized).hostname
+      } catch {
+        return normalized
+      }
+    })()
+
+    const updated = [
+      { title: derivedTitle, url: normalized, lastUsed: new Date().toISOString() },
+      ...recentUrls.filter(entry => entry.url !== normalized),
+    ].slice(0, 10)
+
+    setRecentUrls(updated)
+    localStorage.setItem(`recentUrls:${collectionId}`, JSON.stringify(updated))
+    setExternalUrl(normalized)
+    setExternalUrlTitle(derivedTitle)
+    setSelectedSong(null)
   }
 
   if (!collection || !collectionConfig) {
@@ -676,6 +747,89 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
                   </MenuList>
                 </Menu>
               </HStack>
+
+              <Box
+                mb={4}
+                p={3}
+                borderRadius="md"
+                bg={colorMode === 'dark' ? 'dark.background' : 'calm.background'}
+                borderWidth="1px"
+                borderColor={colorMode === 'dark' ? 'dark.border' : 'calm.border'}
+              >
+                <Text
+                  fontSize="xs"
+                  fontWeight="bold"
+                  color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}
+                  textTransform="uppercase"
+                  letterSpacing="wide"
+                  mb={2}
+                >
+                  URL
+                </Text>
+                <HStack spacing={2}>
+                  <Input
+                    size="sm"
+                    placeholder="https://example.com"
+                    value={urlInput}
+                    onChange={e => setUrlInput(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        openExternalUrl(urlInput)
+                      }
+                    }}
+                  />
+                  <IconButton
+                    aria-label="Open URL"
+                    size="sm"
+                    icon={<ExternalLinkIcon />}
+                    onClick={() => openExternalUrl(urlInput)}
+                  />
+                  <IconButton
+                    aria-label="Clear URL"
+                    size="sm"
+                    variant="ghost"
+                    icon={<CloseIcon />}
+                    isDisabled={!externalUrl}
+                    onClick={() => {
+                      setExternalUrl(null)
+                      setExternalUrlTitle(null)
+                    }}
+                  />
+                </HStack>
+                {recentUrls.length > 0 && (
+                  <HStack spacing={2} mt={2} align="center">
+                    <Select
+                      size="sm"
+                      placeholder="Recent URLs"
+                      value=""
+                      onChange={e => {
+                        if (e.target.value) {
+                          setUrlInput(e.target.value)
+                          openExternalUrl(e.target.value)
+                        }
+                      }}
+                    >
+                      {recentUrls.map(entry => (
+                        <option key={entry.url} value={entry.url}>
+                          {entry.title} — {entry.url}
+                        </option>
+                      ))}
+                    </Select>
+                    <IconButton
+                      aria-label="Clear recent URLs"
+                      size="sm"
+                      variant="ghost"
+                      icon={<DeleteIcon />}
+                      onClick={() => {
+                        if (!collectionId) return
+                        localStorage.removeItem(`recentUrls:${collectionId}`)
+                        setRecentUrls([])
+                      }}
+                    />
+                  </HStack>
+                )}
+              </Box>
 
               {loading ? (
                 <Box textAlign="center" py={8}>
@@ -812,6 +966,12 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
             <SongViewer
               song={selectedSong}
               loading={viewerLoading}
+              externalUrl={externalUrl}
+              externalTitle={externalUrlTitle}
+              onClearExternal={() => {
+                setExternalUrl(null)
+                setExternalUrlTitle(null)
+              }}
               onPrev={selectedSong ? () => handleAdjacentSelect('prev') : undefined}
               onNext={selectedSong ? () => handleAdjacentSelect('next') : undefined}
               hasPrev={selectedSong ? viewableSongs.findIndex(song => song.id === selectedSong.id) > 0 : false}

@@ -16,6 +16,9 @@ pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/b
 interface SongViewerProps {
   song: Song | null
   loading: boolean
+  externalUrl?: string | null
+  externalTitle?: string | null
+  onClearExternal?: () => void
   onPrev?: () => void
   onNext?: () => void
   hasPrev?: boolean
@@ -25,6 +28,9 @@ interface SongViewerProps {
 export default function SongViewer({
   song,
   loading,
+  externalUrl,
+  externalTitle,
+  onClearExternal,
   onPrev,
   onNext,
   hasPrev,
@@ -125,6 +131,66 @@ export default function SongViewer({
     // Single language content should be a string
     return typeof song.content === 'string' ? song.content : ''
   }, [song?.content, isMultiLanguage, selectedLanguage, availableLanguages])
+
+  if (externalUrl) {
+    return (
+      <Box
+        flex="1"
+        h="100%"
+        bg={colorMode === 'dark' ? 'dark.background' : 'calm.background'}
+        display="flex"
+        flexDirection="column"
+      >
+        <Box flex="1" overflowY="auto">
+          <Box maxW="1200px" mx="auto" p={8} pb={8} h="100%">
+            <HStack justify="space-between" mb={4} flexWrap="wrap">
+              <Heading
+                size="lg"
+                color={colorMode === 'dark' ? 'dark.textPrimary' : 'calm.textPrimary'}
+              >
+                {externalTitle || externalUrl}
+              </Heading>
+              <HStack spacing={2}>
+                <Button
+                  size="sm"
+                  as="a"
+                  href={externalUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Open in new tab
+                </Button>
+                {onClearExternal && (
+                  <Button size="sm" variant="ghost" onClick={onClearExternal}>
+                    Back to item
+                  </Button>
+                )}
+              </HStack>
+            </HStack>
+            <Box
+              borderRadius="md"
+              overflow="hidden"
+              bg={colorMode === 'dark' ? 'dark.surface' : 'calm.surface'}
+              borderWidth="1px"
+              borderColor={colorMode === 'dark' ? 'dark.border' : 'calm.border'}
+              h="calc(100vh - 260px)"
+            >
+              <Box
+                as="iframe"
+                src={externalUrl}
+                title={externalTitle || externalUrl}
+                w="100%"
+                h="100%"
+                border="0"
+                loading="lazy"
+                sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+              />
+            </Box>
+          </Box>
+        </Box>
+      </Box>
+    )
+  }
 
   if (!song) {
     return (
