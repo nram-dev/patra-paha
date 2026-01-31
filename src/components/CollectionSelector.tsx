@@ -1,5 +1,5 @@
-import { Box, Heading, Text, SimpleGrid, Card, CardBody, VStack, HStack, Icon, IconButton, Spinner, Tooltip, Button } from '@chakra-ui/react'
-import { AddIcon, RepeatIcon, DeleteIcon } from '@chakra-ui/icons'
+import { Box, Heading, Text, SimpleGrid, Card, CardBody, VStack, HStack, Icon, IconButton, Spinner, Tooltip, Button, Menu, MenuButton, MenuList, MenuItem } from '@chakra-ui/react'
+import { AddIcon, RepeatIcon, DeleteIcon, ViewIcon, ChevronDownIcon, CheckIcon } from '@chakra-ui/icons'
 import { useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { useCollectionStore } from '../stores/collectionStore'
@@ -10,6 +10,9 @@ export const CollectionSelector = () => {
   const { collections, documentCounts, loadCollections, deleteCollection, scanErrors, setScanError, clearScanError, refreshDocumentCounts } = useCollectionStore()
   const [scanning, setScanning] = useState<Record<string, boolean>>({})
   const [deleting, setDeleting] = useState<Record<string, boolean>>({})
+  const [showEmptyCollections, setShowEmptyCollections] = useState(() => {
+    return localStorage.getItem('showEmptyCollections') === 'true'
+  })
 
   useEffect(() => {
     loadCollections()
@@ -45,11 +48,22 @@ export const CollectionSelector = () => {
     }
   }
 
+  const toggleEmptyCollections = () => {
+    const newState = !showEmptyCollections
+    setShowEmptyCollections(newState)
+    localStorage.setItem('showEmptyCollections', String(newState))
+  }
+
+  // Filter collections based on showEmptyCollections setting
+  const visibleCollections = showEmptyCollections
+    ? collections
+    : collections.filter(c => (documentCounts[c.id] || 0) > 0)
+
   return (
     <Box p={8} bg="calm.background" minH="100vh">
       <VStack spacing={8} align="stretch" maxW="1200px" mx="auto">
         {/* Header */}
-        <Box textAlign="center">
+        <Box textAlign="center" position="relative">
           <Box fontSize="5xl" mb={2}>📄</Box>
           <Heading size="2xl" mb={2} color="calm.textPrimary">
             PatraPaha
@@ -60,6 +74,30 @@ export const CollectionSelector = () => {
           <Text fontSize="md" color="calm.textSecondary">
             View Your Documents
           </Text>
+          {/* View Menu */}
+          <Box position="absolute" top={0} right={0}>
+            <Menu>
+              <MenuButton
+                as={Button}
+                size="sm"
+                variant="ghost"
+                leftIcon={<ViewIcon />}
+                rightIcon={<ChevronDownIcon />}
+              >
+                View
+              </MenuButton>
+              <MenuList>
+                <MenuItem
+                  onClick={toggleEmptyCollections}
+                  icon={showEmptyCollections ? <CheckIcon /> : undefined}
+                >
+                  <HStack justify="space-between" w="full">
+                    <Text>Empty Collections</Text>
+                  </HStack>
+                </MenuItem>
+              </MenuList>
+            </Menu>
+          </Box>
         </Box>
 
         {/* Collections Grid */}
@@ -69,7 +107,7 @@ export const CollectionSelector = () => {
               Your Collections
             </Heading>
             <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
-              {collections.map(collection => (
+              {visibleCollections.map(collection => (
                 <Card
                   key={collection.id}
                   cursor="pointer"

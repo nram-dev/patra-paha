@@ -36,6 +36,7 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
   const [language, setLanguage] = useState<TitleLanguage>('english')
   const [isColumn1Collapsed, setIsColumn1Collapsed] = useState(false)
   const [isColumn2Collapsed, setIsColumn2Collapsed] = useState(false)
+  const [showEmptyCategories, setShowEmptyCategories] = useState(false)
 
   // Get collection config
   const collection = collections.find(c => c.id === collectionId)
@@ -123,12 +124,14 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
     loadCategories()
   }, [collectionId])
 
-  // Load column collapse state from localStorage
+  // Load column collapse state and empty categories preference from localStorage
   useEffect(() => {
     const col1Collapsed = localStorage.getItem('column1Collapsed') === 'true'
     const col2Collapsed = localStorage.getItem('column2Collapsed') === 'true'
+    const emptyCategories = localStorage.getItem('showEmptyCategories') === 'true'
     setIsColumn1Collapsed(col1Collapsed)
     setIsColumn2Collapsed(col2Collapsed)
+    setShowEmptyCategories(emptyCategories)
   }, [])
 
   // Global keyboard shortcuts
@@ -145,6 +148,10 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
       if (e.altKey && e.key === '2') {
         e.preventDefault()
         toggleColumn2()
+      }
+      if (e.altKey && e.key === '3') {
+        e.preventDefault()
+        toggleEmptyCategories()
       }
     }
     window.addEventListener('keydown', handleKeyDown)
@@ -431,6 +438,12 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
     localStorage.setItem('column2Collapsed', String(newState))
   }
 
+  const toggleEmptyCategories = () => {
+    const newState = !showEmptyCategories
+    setShowEmptyCategories(newState)
+    localStorage.setItem('showEmptyCategories', String(newState))
+  }
+
   if (!collection || !collectionConfig) {
     return null
   }
@@ -446,14 +459,16 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
         collectionIcon={collection.icon}
         showCategories={!isColumn1Collapsed}
         showItems={!isColumn2Collapsed}
+        showEmptyCategories={showEmptyCategories}
         onToggleCategories={toggleColumn1}
         onToggleItems={toggleColumn2}
+        onToggleEmptyCategories={toggleEmptyCategories}
       />
       <Box flex="1" display="flex" overflow="hidden" position="relative">
         {/* Column 1: Navigation */}
         {!isColumn1Collapsed && (
           <Navigation
-            deities={deities}
+            deities={showEmptyCategories ? deities : deities.filter(d => d.songCount > 0)}
             selectedDeity={selectedDeity}
             onDeitySelect={handleDeitySelect}
             onFavoritesSelect={handleFavoritesSelect}

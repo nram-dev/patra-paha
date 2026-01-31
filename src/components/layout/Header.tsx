@@ -13,8 +13,10 @@ interface HeaderProps {
   collectionIcon?: string
   showCategories?: boolean
   showItems?: boolean
+  showEmptyCategories?: boolean
   onToggleCategories?: () => void
   onToggleItems?: () => void
+  onToggleEmptyCategories?: () => void
 }
 
 export default function Header({
@@ -26,8 +28,10 @@ export default function Header({
   collectionIcon,
   showCategories = true,
   showItems = true,
+  showEmptyCategories = false,
   onToggleCategories,
   onToggleItems,
+  onToggleEmptyCategories,
 }: HeaderProps) {
   const { colorMode, toggleColorMode } = useColorMode()
   const navigate = useNavigate()
@@ -89,7 +93,7 @@ export default function Header({
           >
             Search
           </Button>
-          {onToggleCategories && onToggleItems && (
+          {onToggleCategories && onToggleItems && onToggleEmptyCategories && (
             <Menu>
               <MenuButton
                 as={Button}
@@ -131,6 +135,21 @@ export default function Header({
                     <HStack spacing={0.5}>
                       <Kbd fontSize="xs">Alt</Kbd>
                       <Kbd fontSize="xs">2</Kbd>
+                    </HStack>
+                  </HStack>
+                </MenuItem>
+                <MenuItem
+                  onClick={onToggleEmptyCategories}
+                  icon={showEmptyCategories ? <CheckIcon /> : undefined}
+                  _hover={{
+                    bg: colorMode === 'dark' ? 'dark.border' : 'calm.border',
+                  }}
+                >
+                  <HStack justify="space-between" w="full">
+                    <Text>Empty Categories</Text>
+                    <HStack spacing={0.5}>
+                      <Kbd fontSize="xs">Alt</Kbd>
+                      <Kbd fontSize="xs">3</Kbd>
                     </HStack>
                   </HStack>
                 </MenuItem>
