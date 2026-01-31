@@ -1,6 +1,6 @@
 import { Box, Flex, HStack, Text, IconButton, Button, Kbd, Menu, MenuButton, MenuList, MenuItem } from '@chakra-ui/react'
 import { useColorMode } from '@chakra-ui/react'
-import { MoonIcon, SunIcon, SearchIcon, ChevronDownIcon, ArrowBackIcon } from '@chakra-ui/icons'
+import { MoonIcon, SunIcon, SearchIcon, ChevronDownIcon, ArrowBackIcon, ViewIcon, CheckIcon } from '@chakra-ui/icons'
 import { useNavigate } from 'react-router-dom'
 import { TitleLanguage } from '../../types'
 
@@ -11,9 +11,24 @@ interface HeaderProps {
   onLanguageChange: (language: TitleLanguage) => void
   collectionName?: string
   collectionIcon?: string
+  showCategories?: boolean
+  showItems?: boolean
+  onToggleCategories?: () => void
+  onToggleItems?: () => void
 }
 
-export default function Header({ onLogout, onSearchOpen, language, onLanguageChange, collectionName, collectionIcon }: HeaderProps) {
+export default function Header({
+  onLogout,
+  onSearchOpen,
+  language,
+  onLanguageChange,
+  collectionName,
+  collectionIcon,
+  showCategories = true,
+  showItems = true,
+  onToggleCategories,
+  onToggleItems,
+}: HeaderProps) {
   const { colorMode, toggleColorMode } = useColorMode()
   const navigate = useNavigate()
 
@@ -74,6 +89,54 @@ export default function Header({ onLogout, onSearchOpen, language, onLanguageCha
           >
             Search
           </Button>
+          {onToggleCategories && onToggleItems && (
+            <Menu>
+              <MenuButton
+                as={Button}
+                size="sm"
+                variant="ghost"
+                leftIcon={<ViewIcon />}
+                rightIcon={<ChevronDownIcon />}
+              >
+                View
+              </MenuButton>
+              <MenuList
+                bg={colorMode === 'dark' ? 'dark.surface' : 'calm.surface'}
+                borderColor={colorMode === 'dark' ? 'dark.border' : 'calm.border'}
+              >
+                <MenuItem
+                  onClick={onToggleCategories}
+                  icon={showCategories ? <CheckIcon /> : undefined}
+                  _hover={{
+                    bg: colorMode === 'dark' ? 'dark.border' : 'calm.border',
+                  }}
+                >
+                  <HStack justify="space-between" w="full">
+                    <Text>Categories</Text>
+                    <HStack spacing={0.5}>
+                      <Kbd fontSize="xs">Alt</Kbd>
+                      <Kbd fontSize="xs">1</Kbd>
+                    </HStack>
+                  </HStack>
+                </MenuItem>
+                <MenuItem
+                  onClick={onToggleItems}
+                  icon={showItems ? <CheckIcon /> : undefined}
+                  _hover={{
+                    bg: colorMode === 'dark' ? 'dark.border' : 'calm.border',
+                  }}
+                >
+                  <HStack justify="space-between" w="full">
+                    <Text>Items</Text>
+                    <HStack spacing={0.5}>
+                      <Kbd fontSize="xs">Alt</Kbd>
+                      <Kbd fontSize="xs">2</Kbd>
+                    </HStack>
+                  </HStack>
+                </MenuItem>
+              </MenuList>
+            </Menu>
+          )}
           <Menu>
             <MenuButton
               as={Button}

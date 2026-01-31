@@ -437,13 +437,17 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
 
   return (
     <Box h="100vh" display="flex" flexDirection="column" bg="calm.background">
-      <Header 
-        onLogout={onLogout} 
+      <Header
+        onLogout={onLogout}
         onSearchOpen={() => setIsSearchOpen(true)}
         language={language}
         onLanguageChange={handleLanguageChange}
         collectionName={collection.name}
         collectionIcon={collection.icon}
+        showCategories={!isColumn1Collapsed}
+        showItems={!isColumn2Collapsed}
+        onToggleCategories={toggleColumn1}
+        onToggleItems={toggleColumn2}
       />
       <Box flex="1" display="flex" overflow="hidden" position="relative">
         {/* Column 1: Navigation */}
