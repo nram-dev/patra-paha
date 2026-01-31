@@ -1,5 +1,33 @@
 # Development Journal
 
+## 2026-01-31: Enhance Audio Player Controls
+
+### Feature
+Add custom audio controls for skip, speed, replay, and play/pause, keep playback on the current song, and refine the control layout/styling.
+
+### Changes Made
+
+#### 1. Playback Behavior + State
+**File:** `src/components/layout/AudioPanel.tsx`
+- Disabled auto-advance on track end so playback stays on the current song
+- Added play/pause state and a highlighted Play/Pause control
+
+#### 2. Skip + Speed Controls
+**File:** `src/components/layout/AudioPanel.tsx`
+- Added skip back/forward buttons for 5/10/30/60 seconds
+- Added speed presets: 0.5x, 0.7x, 0.9x, 1x, 1.2x, 1.5x, 2x (with 1x emphasized)
+- Added replay-from-start control
+
+#### 3. Layout + Styling
+**File:** `src/components/layout/AudioPanel.tsx`
+- Rearranged controls into left/center/right groups (play/replay, skip, speed)
+- Increased label contrast with distinct background colors
+
+### Files Modified
+- `src/components/layout/AudioPanel.tsx` - Custom audio controls, layout, and styling updates
+
+---
+
 ## 2026-01-31: Add Browser Audio Support (mp3/mp4/wav)
 
 ### Feature
