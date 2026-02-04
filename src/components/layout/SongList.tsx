@@ -69,7 +69,7 @@ export default function SongList({
       <Box
         w="280px"
         h="100%"
-        bg={colorMode === 'dark' ? 'dark.surface' : 'calm.surface'}
+        bg={colorMode === 'dark' ? 'dark.panelSecondary' : 'calm.panelSecondary'}
         borderRight="1px"
         borderColor={colorMode === 'dark' ? 'dark.border' : 'calm.border'}
         p={4}
@@ -178,7 +178,7 @@ export default function SongList({
     <Box
       w="280px"
       h="100%"
-      bg={colorMode === 'dark' ? 'dark.surface' : 'calm.surface'}
+      bg={colorMode === 'dark' ? 'dark.panelSecondary' : 'calm.panelSecondary'}
       borderRight="1px"
       borderColor={colorMode === 'dark' ? 'dark.border' : 'calm.border'}
       overflowY="auto"

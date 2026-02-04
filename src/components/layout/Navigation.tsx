@@ -30,7 +30,7 @@ export default function Navigation({
     <Box
       w="200px"
       h="100%"
-      bg={colorMode === 'dark' ? 'dark.surface' : 'calm.surface'}
+      bg={colorMode === 'dark' ? 'dark.panelPrimary' : 'calm.panelPrimary'}
       borderRight="1px"
       borderColor={colorMode === 'dark' ? 'dark.border' : 'calm.border'}
       overflowY="auto"

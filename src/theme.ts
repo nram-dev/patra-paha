@@ -3,17 +3,21 @@ import { extendTheme } from '@chakra-ui/react'
 export const theme = extendTheme({
   colors: {
     calm: {
-      background: '#F5F5DC',
+      background: '#FFFFFF',
       surface: '#FFFFFF',
+      panelPrimary: '#E8E8E8',
+      panelSecondary: '#F0F0F0',
       textPrimary: '#2C1810',
       textSecondary: '#6B5D52',
       accent: '#FF9933',
-      border: '#E0D5C7',
+      border: '#D0D0D0',
       highlight: '#FFF9C4',
     },
     dark: {
-      background: '#262626',
+      background: '#2D2D2D',
       surface: '#2D2D2D',
+      panelPrimary: '#1A1A1A',
+      panelSecondary: '#222222',
       textPrimary: '#F5F5F0',
       textSecondary: '#B8B5B0',
       accent: '#D4AF37',

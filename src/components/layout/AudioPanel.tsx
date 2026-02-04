@@ -39,9 +39,9 @@ export default function AudioPanel({
   const speedOptions = [0.5, 0.7, 0.9, 1, 1.2, 1.5, 2]
   const skipOptions = [5, 10, 30, 60]
   const heightPresets = [
-    { label: 'Small', value: 160 },
-    { label: 'Medium', value: 300 },
-    { label: 'Large', value: 520 },
+    { label: 'Small', value: 160, iconSize: 2 },
+    { label: 'Medium', value: 300, iconSize: 3 },
+    { label: 'Large', value: 520, iconSize: 4 },
   ]
   const smallHeight = 160
   const largeHeight = 520
@@ -93,7 +93,7 @@ export default function AudioPanel({
     prevExternalEmbedUrlRef.current = externalEmbedUrl
 
     if (!prevExternal && externalEmbedUrl) {
-      onHeightChange(largeHeight)
+      onHeightChange(smallHeight)
       return
     }
 
@@ -295,14 +295,14 @@ export default function AudioPanel({
             Height:
           </Text>
           {heightPresets.map((preset) => (
-            <Button
+            <IconButton
               key={preset.label}
+              aria-label={`Set height ${preset.label.toLowerCase()}`}
               size="xs"
+              icon={<Box boxSize={preset.iconSize} bg="currentColor" />}
               variant={panelHeight === preset.value ? 'solid' : 'outline'}
               onClick={() => onHeightChange(preset.value)}
-            >
-              {preset.label}
-            </Button>
+            />
           ))}
         </HStack>
       </Box>
