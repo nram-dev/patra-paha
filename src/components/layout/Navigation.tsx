@@ -71,7 +71,7 @@ export default function Navigation({
           >
             <Box display="flex" alignItems="center" gap={2}>
               <StarIcon boxSize={3} />
-              <Text fontSize="sm" fontWeight={showingFavorites ? 'semibold' : 'normal'}>
+              <Text fontSize="md" fontWeight="semibold">
                 Favorites
               </Text>
             </Box>
@@ -131,10 +131,10 @@ export default function Navigation({
                 }}
                 transition="all 0.2s"
               >
-                <Text fontSize="sm" fontWeight={selectedDeity?.id === deity.id && !showingFavorites ? 'semibold' : 'normal'}>
+                <Text fontSize="md" fontWeight="semibold">
                   {deity.name}
                 </Text>
-                <Text fontSize="xs" opacity={0.7}>
+                <Text fontSize="sm" opacity={0.8}>
                   {deity.songCount} {deity.songCount === 1 ? itemLabel : `${itemLabel}s`}
                 </Text>
               </Box>

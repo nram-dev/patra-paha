@@ -5,8 +5,8 @@ export const theme = extendTheme({
     calm: {
       background: '#FFFFFF',
       surface: '#FFFFFF',
-      panelPrimary: '#E8E8E8',
-      panelSecondary: '#F0F0F0',
+      panelPrimary: '#E0E0E0',
+      panelSecondary: '#EAEAEA',
       textPrimary: '#2C1810',
       textSecondary: '#6B5D52',
       accent: '#FF9933',

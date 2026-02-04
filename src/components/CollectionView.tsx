@@ -732,7 +732,7 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
           <Box
             w="280px"
             h="100%"
-            bg={colorMode === 'dark' ? 'dark.surface' : 'calm.surface'}
+            bg={colorMode === 'dark' ? 'dark.panelSecondary' : 'calm.panelSecondary'}
             borderRight="1px"
             borderColor={colorMode === 'dark' ? 'dark.border' : 'calm.border'}
             overflowY="auto"
@@ -790,7 +790,7 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
                 borderColor={colorMode === 'dark' ? 'dark.border' : 'calm.border'}
               >
                 <Text
-                  fontSize="xs"
+                  fontSize="sm"
                   fontWeight="bold"
                   color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}
                   textTransform="uppercase"
@@ -877,7 +877,7 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
                   {docSongs.length > 0 && (
                     <Box>
                       <Text
-                        fontSize="xs"
+                        fontSize="sm"
                         fontWeight="bold"
                         color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}
                         textTransform="uppercase"
@@ -908,7 +908,7 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
                   {imageSongs.length > 0 && (
                     <Box>
                       <Text
-                        fontSize="xs"
+                        fontSize="sm"
                         fontWeight="bold"
                         color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}
                         textTransform="uppercase"
@@ -939,7 +939,7 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
                   {audioSongs.length > 0 && (
                     <Box>
                       <Text
-                        fontSize="xs"
+                        fontSize="sm"
                         fontWeight="bold"
                         color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}
                         textTransform="uppercase"

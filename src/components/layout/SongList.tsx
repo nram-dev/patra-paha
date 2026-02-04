@@ -129,15 +129,15 @@ export default function SongList({
             }
           >
             <Text
-              fontSize="sm"
-              fontWeight={selectedSong?.id === song.id ? 'semibold' : 'normal'}
+              fontSize="md"
+              fontWeight="normal"
               noOfLines={2}
               className={language !== 'english' ? 'tamil-text' : undefined}
             >
               {getSongTitle(song, language)}
             </Text>
             {song.metadata?.ragam && (
-              <Text fontSize="xs" opacity={0.7} mt={1}>
+              <Text fontSize="sm" opacity={0.8} mt={1}>
                 {song.metadata.ragam}
               </Text>
             )}

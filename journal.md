@@ -1,5 +1,10 @@
 ## 2026-02-03
 
+- Improved light theme panel styling: Doc panel now has white background, Category panel uses light gray (#E0E0E0), Items panel uses slightly lighter gray (#EAEAEA) for visual hierarchy.
+- Added corresponding dark theme panel colors for consistency.
+- Increased font sizes in Category panel (Navigation) with semibold weight for better readability on gray background.
+- Increased font sizes in Items panel (SongList) with normal weight for cleaner appearance.
+- Updated section headers (Docs, Images, Audio, URL) to larger font size.
 - Deployed app to Vercel at https://patra-paha.vercel.app for access from mobile devices.
 - Enabled network access for dev server (`host: true` in vite.config.ts) for local network testing.
 - Fixed TypeScript build errors: excluded legacy backup files, fixed unused imports, and corrected type mismatches.
