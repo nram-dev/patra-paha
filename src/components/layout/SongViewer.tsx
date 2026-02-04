@@ -4,7 +4,7 @@ import { AddIcon, MinusIcon, DownloadIcon, ChevronLeftIcon, ChevronRightIcon } f
 import { Song, MultiLanguageContent } from '../../types'
 import { parseMetadata } from '../../services/metadataParser'
 import { normalizeHtmlContent } from '../../services/contentNormalizer'
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { extractFirstYouTubeUrl } from '../../utils/extractYouTubeUrl'
 import { Document, Page, pdfjs } from 'react-pdf'
 import { db } from '../../db/database'
@@ -45,6 +45,7 @@ export default function SongViewer({
 
   const [fontSize, setFontSize] = useState<'small' | 'medium' | 'large' | 'xlarge'>('medium')
   const [imageZoom, setImageZoom] = useState(100)
+  const contentRef = useRef<HTMLDivElement>(null)
   const [pdfNumPages, setPdfNumPages] = useState<number | null>(null)
   const [pdfPageNumber, setPdfPageNumber] = useState(1)
   const [pdfScale, setPdfScale] = useState(1.0)
@@ -161,6 +162,7 @@ export default function SongViewer({
     if (!onDetectedExternalUrl) return
     onDetectedExternalUrl(detectedExternalUrl)
   }, [detectedExternalUrl, onDetectedExternalUrl])
+
 
   if (externalUrl) {
     return (
@@ -564,11 +566,12 @@ export default function SongViewer({
     tamil: 'தமிழ்',
   }
 
-  const fontSizes = {
-    small: '18px',
-    medium: '22px',
-    large: '28px',
-    xlarge: '36px',
+  // Zoom levels for scaling both text and images together
+  const zoomLevels = {
+    small: 0.82,
+    medium: 1.0,
+    large: 1.27,
+    xlarge: 1.64,
   }
 
   return (
@@ -756,8 +759,8 @@ export default function SongViewer({
 
         {/* Lyrics */}
         <Box
+          ref={contentRef}
           className="tamil-text"
-          fontSize={fontSizes[fontSize]}
           lineHeight="1.8"
           color={colorMode === 'dark' ? 'dark.textPrimary' : 'calm.textPrimary'}
           whiteSpace="pre-wrap"
@@ -776,6 +779,10 @@ export default function SongViewer({
               window.open(extracted, '_blank', 'noopener,noreferrer')
             }
           }}
+          style={{
+            zoom: zoomLevels[fontSize],
+            fontSize: '22px',
+          }}
           sx={{
             '& p': {
               marginBottom: '1em',
@@ -785,6 +792,10 @@ export default function SongViewer({
             },
             '& em': {
               fontStyle: 'italic',
+            },
+            '& img': {
+              maxWidth: '100%',
+              height: 'auto',
             },
           }}
         />

@@ -21,6 +21,9 @@ export function normalizeHtmlContent(html: string, theme: 'calm' | 'dark' = 'cal
   // Preserve structure but normalize styling
   normalizeStyling(body, theme)
 
+  // Normalize images for CSS-controlled scaling
+  normalizeImages(body)
+
   return body.innerHTML
 }
 
@@ -128,6 +131,23 @@ function normalizeStyling(element: HTMLElement, theme: 'calm' | 'dark'): void {
     if (child instanceof HTMLElement) {
       normalizeStyling(child, theme)
     }
+  })
+}
+
+/**
+ * Normalize images for CSS-controlled scaling
+ * Removes inline width/height so CSS can control sizing
+ */
+function normalizeImages(element: HTMLElement): void {
+  const images = element.querySelectorAll('img')
+  images.forEach(img => {
+    // Remove width/height attributes so CSS can control sizing
+    img.removeAttribute('width')
+    img.removeAttribute('height')
+    // Remove any inline width/height/max-width styles
+    img.style.width = ''
+    img.style.height = ''
+    img.style.maxWidth = ''
   })
 }
 

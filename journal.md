@@ -1,3 +1,7 @@
+## 2026-02-03
+
+- Added image scaling with text zoom: embedded images in documents now scale together with text when using A+/A- font size controls, using CSS zoom for proper layout adjustment.
+
 ## 2026-01-31
 
 - Added a URL override in the Items panel, including recent URL recall, clear actions, and an embedded viewer override in the Doc panel.
