@@ -34,3 +34,7 @@ client_secret_*.json
 PHASE1-COMPLETE.md
 #dev/**
 scripts/**
+data/**
+.dev/**
+package-lock.json
+.vercel

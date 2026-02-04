@@ -55,12 +55,13 @@ export async function migrateToMultiCollection(): Promise<boolean> {
 
     // Step 2: Migrate songs to documents
     if (existingSongs.length > 0) {
+      // Legacy songs have 'deity' field which maps to 'category' in new schema
       const documents: Document[] = existingSongs.map(song => ({
         ...song,
         collectionId: 'bhajana-default',
         collectionType: 'bhajana' as const,
-        category: song.deity, // deity becomes category
-        language: 'english',
+        category: (song as unknown as { deity: string }).deity, // deity becomes category
+        language: 'english' as const,
       }))
 
       await db.documents.bulkPut(documents)

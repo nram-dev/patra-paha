@@ -1,4 +1,4 @@
-import { Song, Deity } from '../types'
+import { Deity } from '../types'
 
 const DRIVE_API_BASE = 'https://www.googleapis.com/drive/v3'
 const DRIVE_EXPORT_BASE = 'https://www.googleapis.com/drive/v3/files'
@@ -165,7 +165,7 @@ export class DriveService {
   /**
    * Get image thumbnail URL
    */
-  getImageThumbnailUrl(fileId: string, size: number = 500): string {
+  getImageThumbnailUrl(fileId: string, _size: number = 500): string {
     if (!this.accessToken) {
       throw new Error('No access token available')
     }

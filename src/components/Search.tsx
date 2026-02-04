@@ -253,7 +253,7 @@ export default function Search({ isOpen, onClose, songs, onSongSelect }: SearchP
                       colorScheme={index === selectedIndex ? 'whiteAlpha' : 'gray'}
                       fontSize="xs"
                     >
-                      {song.deity}
+                      {song.category}
                     </Badge>
                   </HStack>
                   {(song.metadata?.ragam || song.metadata?.talam) && (

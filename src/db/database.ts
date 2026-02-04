@@ -53,7 +53,7 @@ export class GTDatabase extends Dexie {
       
       settings: 'id',
       searchHistory: '++id, query, timestamp'
-    }).upgrade(tx => {
+    }).upgrade(_tx => {
       // Migration will be handled by the migration utility
       console.log('Database upgraded to version 3 (multi-collection schema)')
       return Promise.resolve()

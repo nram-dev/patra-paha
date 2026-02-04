@@ -1,5 +1,8 @@
 ## 2026-02-03
 
+- Deployed app to Vercel at https://patra-paha.vercel.app for access from mobile devices.
+- Enabled network access for dev server (`host: true` in vite.config.ts) for local network testing.
+- Fixed TypeScript build errors: excluded legacy backup files, fixed unused imports, and corrected type mismatches.
 - Added image scaling with text zoom: embedded images in documents now scale together with text when using A+/A- font size controls, using CSS zoom for proper layout adjustment.
 
 ## 2026-01-31

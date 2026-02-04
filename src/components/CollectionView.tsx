@@ -10,7 +10,7 @@ import SongList from './layout/SongList'
 import SongViewer from './layout/SongViewer'
 import AudioPanel from './layout/AudioPanel'
 import Search from './Search'
-import { Deity, Song, TitleLanguage, Document, Category, SortOption } from '../types'
+import { Deity, Song, TitleLanguage, Document, SortOption } from '../types'
 import { useCollectionStore } from '../stores/collectionStore'
 import { getCollectionConfig } from '../config/collections'
 import { parseMultiLanguageContent } from '../services/metadataParser'
@@ -233,7 +233,8 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
 
-  const handleDeitySelect = async (deity: Deity, languageOverride?: TitleLanguage) => {
+  const handleDeitySelect = async (deity: Deity | null, _languageOverride?: TitleLanguage) => {
+    if (!deity) return
     setSelectedDeity(deity)
     setSelectedSong(null)
     setShowingFavorites(false)

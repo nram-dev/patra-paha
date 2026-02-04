@@ -1,4 +1,4 @@
-import { Box, Heading, VStack, Text, Spinner, HStack, IconButton, Image, Button, Tabs, TabList, Tab, Table, Thead, Tbody, Tr, Th, Td } from '@chakra-ui/react'
+import { Box, Heading, VStack, Text, Spinner, HStack, IconButton, Image, Button, Tabs, TabList, Tab, Table, Tbody, Tr, Th, Td } from '@chakra-ui/react'
 import { useColorMode } from '@chakra-ui/react'
 import { AddIcon, MinusIcon, DownloadIcon, ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons'
 import { Song, MultiLanguageContent } from '../../types'
