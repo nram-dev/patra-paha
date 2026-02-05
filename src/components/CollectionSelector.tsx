@@ -1,9 +1,15 @@
-import { Box, Heading, Text, SimpleGrid, Card, CardBody, VStack, HStack, Icon, IconButton, Spinner, Tooltip, Button, Menu, MenuButton, MenuList, MenuItem } from '@chakra-ui/react'
-import { AddIcon, RepeatIcon, DeleteIcon, ViewIcon, ChevronDownIcon, CheckIcon } from '@chakra-ui/icons'
+import {
+  Box, Heading, Text, SimpleGrid, Card, CardBody, VStack, HStack, Icon, IconButton, Spinner, Tooltip, Button, Menu, MenuButton, MenuList, MenuItem,
+  Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalFooter, ModalCloseButton,
+  FormControl, FormLabel, Input, Popover, PopoverTrigger, PopoverContent, PopoverBody, Wrap, WrapItem, Flex, useToast
+} from '@chakra-ui/react'
+import { AddIcon, RepeatIcon, DeleteIcon, ViewIcon, ChevronDownIcon, CheckIcon, EditIcon } from '@chakra-ui/icons'
 import { useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { useCollectionStore } from '../stores/collectionStore'
 import { scanCollection } from '../services/scanService'
+import { CUSTOM_COLORS, CUSTOM_ICONS } from '../config/collections'
+import { Collection } from '../types'
 
 type CollectionSelectorProps = {
   onLogout: () => void
@@ -11,12 +17,20 @@ type CollectionSelectorProps = {
 
 export const CollectionSelector = ({ onLogout }: CollectionSelectorProps) => {
   const navigate = useNavigate()
-  const { collections, documentCounts, loadCollections, deleteCollection, scanErrors, setScanError, clearScanError, refreshDocumentCounts } = useCollectionStore()
+  const toast = useToast()
+  const { collections, documentCounts, loadCollections, deleteCollection, updateCollection, scanErrors, setScanError, clearScanError, refreshDocumentCounts } = useCollectionStore()
   const [scanning, setScanning] = useState<Record<string, boolean>>({})
   const [deleting, setDeleting] = useState<Record<string, boolean>>({})
   const [showEmptyCollections, setShowEmptyCollections] = useState(() => {
     return localStorage.getItem('showEmptyCollections') === 'true'
   })
+
+  // Edit modal state
+  const [editingCollection, setEditingCollection] = useState<Collection | null>(null)
+  const [editName, setEditName] = useState('')
+  const [editIcon, setEditIcon] = useState('')
+  const [editColor, setEditColor] = useState({ name: '', color: '', accent: '' })
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     loadCollections()
@@ -56,6 +70,52 @@ export const CollectionSelector = ({ onLogout }: CollectionSelectorProps) => {
     const newState = !showEmptyCollections
     setShowEmptyCollections(newState)
     localStorage.setItem('showEmptyCollections', String(newState))
+  }
+
+  const handleEditOpen = (collection: Collection) => {
+    setEditingCollection(collection)
+    setEditName(collection.name)
+    setEditIcon(collection.icon)
+    // Find the matching color from CUSTOM_COLORS or create a custom entry
+    const matchingColor = CUSTOM_COLORS.find(c => c.color === collection.color)
+    setEditColor(matchingColor || { name: 'Custom', color: collection.color, accent: collection.accentColor || collection.color })
+  }
+
+  const handleEditClose = () => {
+    setEditingCollection(null)
+    setEditName('')
+    setEditIcon('')
+    setEditColor({ name: '', color: '', accent: '' })
+  }
+
+  const handleEditSave = async () => {
+    if (!editingCollection) return
+    setSaving(true)
+    try {
+      await updateCollection(editingCollection.id, {
+        name: editName.trim() || editingCollection.name,
+        icon: editIcon,
+        color: editColor.color,
+        accentColor: editColor.accent,
+      })
+      toast({
+        title: 'Collection updated',
+        status: 'success',
+        duration: 2000,
+        isClosable: true,
+      })
+      handleEditClose()
+    } catch (err) {
+      console.error('Failed to update collection:', err)
+      toast({
+        title: 'Failed to update',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      })
+    } finally {
+      setSaving(false)
+    }
   }
 
   // Filter collections based on showEmptyCollections setting
@@ -125,15 +185,15 @@ export const CollectionSelector = ({ onLogout }: CollectionSelectorProps) => {
                   key={collection.id}
                   cursor="pointer"
                   onClick={() => navigate(`/collection/${collection.id}`)}
-                  _hover={{ 
-                    transform: 'translateY(-4px)', 
+                  _hover={{
+                    transform: 'translateY(-4px)',
                     shadow: 'lg',
                     borderColor: collection.color
                   }}
                   transition="all 0.2s"
-                  bg="white"
+                  bg={`${collection.color}12`}
                   borderWidth={2}
-                  borderColor="gray.200"
+                  borderColor={`${collection.color}40`}
                 >
                   <CardBody>
                     <VStack align="start" spacing={3}>
@@ -157,6 +217,16 @@ export const CollectionSelector = ({ onLogout }: CollectionSelectorProps) => {
                           <Text as="span" fontWeight="medium">{documentCounts[collection.id] || 0}</Text> documents
                         </Text>
                         <HStack spacing={1}>
+                          <Tooltip label="Edit collection" hasArrow>
+                            <IconButton
+                              aria-label="Edit collection"
+                              icon={<EditIcon />}
+                              size="sm"
+                              variant="ghost"
+                              colorScheme="blue"
+                              onClick={(e) => { e.stopPropagation(); handleEditOpen(collection) }}
+                            />
+                          </Tooltip>
                           <Tooltip label="Scan for changes" hasArrow>
                             <IconButton
                               aria-label="Scan collection"
@@ -245,6 +315,138 @@ export const CollectionSelector = ({ onLogout }: CollectionSelectorProps) => {
 
         </Box>
       </VStack>
+
+      {/* Edit Collection Modal */}
+      <Modal isOpen={!!editingCollection} onClose={handleEditClose} isCentered>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Edit Collection</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <VStack spacing={4}>
+              {/* Collection Name */}
+              <FormControl>
+                <FormLabel>Name</FormLabel>
+                <Input
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  placeholder="Collection name"
+                />
+              </FormControl>
+
+              {/* Icon and Color */}
+              <FormControl>
+                <FormLabel>Icon & Color</FormLabel>
+                <Flex gap={2} align="center">
+                  {/* Icon Picker */}
+                  <Popover placement="bottom-start">
+                    <PopoverTrigger>
+                      <Button
+                        variant="outline"
+                        fontSize="xl"
+                        w="60px"
+                        h="40px"
+                        p={0}
+                      >
+                        {editIcon}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent w="auto">
+                      <PopoverBody>
+                        <Wrap spacing={1} maxW="200px">
+                          {CUSTOM_ICONS.map((icon) => (
+                            <WrapItem key={icon}>
+                              <Button
+                                size="sm"
+                                variant={editIcon === icon ? 'solid' : 'ghost'}
+                                colorScheme={editIcon === icon ? 'purple' : 'gray'}
+                                onClick={() => setEditIcon(icon)}
+                                fontSize="lg"
+                                w="36px"
+                                h="36px"
+                                p={0}
+                              >
+                                {icon}
+                              </Button>
+                            </WrapItem>
+                          ))}
+                        </Wrap>
+                      </PopoverBody>
+                    </PopoverContent>
+                  </Popover>
+
+                  {/* Color Picker */}
+                  <Popover placement="bottom-start">
+                    <PopoverTrigger>
+                      <Button
+                        variant="outline"
+                        w="60px"
+                        h="40px"
+                        p={0}
+                      >
+                        <Box
+                          w="24px"
+                          h="24px"
+                          borderRadius="full"
+                          bg={editColor.color}
+                        />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent w="auto">
+                      <PopoverBody>
+                        <Wrap spacing={1} maxW="180px">
+                          {CUSTOM_COLORS.map((colorOption) => (
+                            <WrapItem key={colorOption.name}>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => setEditColor(colorOption)}
+                                w="36px"
+                                h="36px"
+                                p={0}
+                                border={editColor.name === colorOption.name ? '2px solid' : 'none'}
+                                borderColor="gray.800"
+                              >
+                                <Box
+                                  w="24px"
+                                  h="24px"
+                                  borderRadius="full"
+                                  bg={colorOption.color}
+                                />
+                              </Button>
+                            </WrapItem>
+                          ))}
+                        </Wrap>
+                      </PopoverBody>
+                    </PopoverContent>
+                  </Popover>
+                </Flex>
+              </FormControl>
+
+              {/* Folder path (read-only info) */}
+              {editingCollection?.driveFolderPath && (
+                <FormControl>
+                  <FormLabel color="gray.500" fontSize="sm">Drive Folder (read-only)</FormLabel>
+                  <Text fontSize="sm" color="gray.600">{editingCollection.driveFolderPath}</Text>
+                </FormControl>
+              )}
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="ghost" mr={3} onClick={handleEditClose}>
+              Cancel
+            </Button>
+            <Button
+              colorScheme="blue"
+              onClick={handleEditSave}
+              isLoading={saving}
+              isDisabled={!editName.trim()}
+            >
+              Save
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </Box>
   )
 }
