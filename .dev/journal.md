@@ -400,3 +400,75 @@ Redesigned the Add New Collection screen with predefined presets and improved UX
 4. Click "Find Folder & Add Collection"
 5. Validates: folder exists, not duplicate, has content
 6. Creates collection and auto-scans
+
+---
+
+## 2026-02-04: Responsive UI for Mobile and Tablet
+
+### Feature
+Added responsive layouts for mobile, tablet, and desktop with adaptive UI components and manual layout mode override.
+
+### Changes Made
+
+#### 1. Breakpoint Definitions
+**File:** `src/theme.ts`
+- Added Chakra UI breakpoints: base (0), sm (480px), md (768px), lg (992px), xl (1280px), 2xl (1536px)
+
+#### 2. Responsive Hook
+**File:** `src/hooks/useResponsive.ts` (new)
+- Created `useResponsive()` hook for device type detection (mobile/tablet/desktop)
+
+#### 3. Header Responsive Layout
+**File:** `src/components/layout/Header.tsx`
+- Mobile: Hamburger menu, collection icon only, hidden sign out
+- Tablet: Category dropdown, icon-only buttons, sign out icon
+- Desktop: Full text labels, categories in sidebar
+- Removed View dropdown menu
+- Added tablet/desktop layout toggle icons for manual override
+- Removed language selector (kept props for future use)
+- Search button is icon-only in all layouts
+
+#### 4. Mobile Navigation Drawer
+**File:** `src/components/CollectionView.tsx`
+- Added left-side drawer for categories on mobile
+- Added bottom tab bar for panel switching (Songs/Viewer/Audio)
+- Added `layoutMode` state with localStorage persistence
+
+#### 5. Compact Mobile Collection Tiles
+**File:** `src/components/CollectionSelector.tsx`
+- 2-line compact layout on mobile:
+  - Line 1: Icon, Name, Edit, Refresh, Delete
+  - Line 2: Folder path (document count)
+- Compact mobile header with menu button
+
+#### 6. Audio Panel Mobile Layout
+**File:** `src/components/layout/AudioPanel.tsx`
+- Stacked controls on mobile (play/replay, skip, speed in separate rows)
+- Hidden height controls on mobile
+- Responsive URL input width
+
+#### 7. Layout Mode Override
+**Files:** `src/components/layout/Header.tsx`, `src/components/CollectionView.tsx`
+- Added TabletIcon and DesktopIcon SVG components
+- Users can manually switch between tablet/desktop layouts
+- Fixes tablet in landscape being detected as desktop
+
+### Layout Comparison
+
+| Feature | Mobile | Tablet | Desktop |
+|---------|--------|--------|---------|
+| Categories | Drawer | Header dropdown | Sidebar |
+| Song list | Full screen tab | 240px column | 280px column |
+| Panel switch | Bottom tabs | N/A | Collapse buttons |
+| Layout toggle | Hidden | Shown | Shown |
+| Sign out | Hidden | Icon | Text |
+
+### Files Modified
+- `src/theme.ts` - Breakpoint definitions
+- `src/hooks/useResponsive.ts` - New responsive hook
+- `src/components/layout/Header.tsx` - Responsive header, layout toggle
+- `src/components/layout/Navigation.tsx` - Drawer mode support
+- `src/components/layout/SongList.tsx` - Full-width mode
+- `src/components/layout/AudioPanel.tsx` - Mobile stacked controls
+- `src/components/CollectionView.tsx` - Mobile drawer, bottom tabs, layout state
+- `src/components/CollectionSelector.tsx` - Compact mobile tiles
