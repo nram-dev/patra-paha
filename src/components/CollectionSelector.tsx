@@ -1,7 +1,7 @@
 import {
   Box, Heading, Text, SimpleGrid, Card, CardBody, VStack, HStack, Icon, IconButton, Spinner, Tooltip, Button, Menu, MenuButton, MenuList, MenuItem,
   Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalFooter, ModalCloseButton,
-  FormControl, FormLabel, Input, Popover, PopoverTrigger, PopoverContent, PopoverBody, Wrap, WrapItem, Flex, useToast
+  FormControl, FormLabel, Input, Popover, PopoverTrigger, PopoverContent, PopoverBody, Wrap, WrapItem, Flex, useToast, useBreakpointValue
 } from '@chakra-ui/react'
 import { AddIcon, RepeatIcon, DeleteIcon, ViewIcon, ChevronDownIcon, CheckIcon, EditIcon } from '@chakra-ui/icons'
 import { useNavigate } from 'react-router-dom'
@@ -21,6 +21,9 @@ export const CollectionSelector = ({ onLogout }: CollectionSelectorProps) => {
   const { collections, documentCounts, loadCollections, deleteCollection, updateCollection, scanErrors, setScanError, clearScanError, refreshDocumentCounts } = useCollectionStore()
   const [scanning, setScanning] = useState<Record<string, boolean>>({})
   const [deleting, setDeleting] = useState<Record<string, boolean>>({})
+
+  // Responsive
+  const isMobile = useBreakpointValue({ base: true, md: false }) ?? false
   const [showEmptyCollections, setShowEmptyCollections] = useState(() => {
     return localStorage.getItem('showEmptyCollections') === 'true'
   })
@@ -124,53 +127,89 @@ export const CollectionSelector = ({ onLogout }: CollectionSelectorProps) => {
     : collections.filter(c => (documentCounts[c.id] || 0) > 0)
 
   return (
-    <Box p={8} bg="calm.background" minH="100vh">
-      <VStack spacing={8} align="stretch" maxW="1200px" mx="auto">
-        {/* Header */}
+    <Box p={{ base: 4, md: 8 }} bg="calm.background" minH="100vh">
+      <VStack spacing={{ base: 4, md: 8 }} align="stretch" maxW="1200px" mx="auto">
+        {/* Header - compact on mobile */}
         <Box textAlign="center" position="relative">
-          <Box fontSize="5xl" mb={2}>📄</Box>
-          <Heading size="2xl" mb={2} color="calm.textPrimary">
-            PatraPaha
-          </Heading>
-          <Text fontSize="xl" color="calm.textSecondary" mb={1}>
-            पत्रपहा
-          </Text>
-          <Text fontSize="md" color="calm.textSecondary">
-            View Your Documents
-          </Text>
-          {/* Actions (Sign Out + View Menu) */}
-          <HStack position="absolute" top={0} right={0} spacing={2}>
-            <Text
-              as="button"
-              onClick={onLogout}
-              fontSize="sm"
-              color="calm.textSecondary"
-              _hover={{ color: 'calm.textPrimary' }}
-            >
-              Sign Out
-            </Text>
-            <Menu>
-              <MenuButton
-                as={Button}
-                size="sm"
-                variant="ghost"
-                leftIcon={<ViewIcon />}
-                rightIcon={<ChevronDownIcon />}
-              >
-                View
-              </MenuButton>
-              <MenuList>
-                <MenuItem
-                  onClick={toggleEmptyCollections}
-                  icon={showEmptyCollections ? <CheckIcon /> : undefined}
+          {isMobile ? (
+            /* Mobile compact header */
+            <HStack justify="space-between" align="center">
+              <HStack spacing={2}>
+                <Text fontSize="2xl">📄</Text>
+                <VStack align="start" spacing={0}>
+                  <Heading size="md" color="calm.textPrimary">PatraPaha</Heading>
+                  <Text fontSize="xs" color="calm.textSecondary">पत्रपहा</Text>
+                </VStack>
+              </HStack>
+              <HStack spacing={1}>
+                <Menu>
+                  <MenuButton
+                    as={IconButton}
+                    aria-label="View options"
+                    icon={<ViewIcon />}
+                    size="sm"
+                    variant="ghost"
+                  />
+                  <MenuList>
+                    <MenuItem
+                      onClick={toggleEmptyCollections}
+                      icon={showEmptyCollections ? <CheckIcon /> : undefined}
+                    >
+                      Empty Collections
+                    </MenuItem>
+                    <MenuItem onClick={onLogout}>Sign Out</MenuItem>
+                  </MenuList>
+                </Menu>
+              </HStack>
+            </HStack>
+          ) : (
+            /* Desktop header */
+            <>
+              <Box fontSize="5xl" mb={2}>📄</Box>
+              <Heading size="2xl" mb={2} color="calm.textPrimary">
+                PatraPaha
+              </Heading>
+              <Text fontSize="xl" color="calm.textSecondary" mb={1}>
+                पत्रपहा
+              </Text>
+              <Text fontSize="md" color="calm.textSecondary">
+                View Your Documents
+              </Text>
+              {/* Actions (Sign Out + View Menu) */}
+              <HStack position="absolute" top={0} right={0} spacing={2}>
+                <Text
+                  as="button"
+                  onClick={onLogout}
+                  fontSize="sm"
+                  color="calm.textSecondary"
+                  _hover={{ color: 'calm.textPrimary' }}
                 >
-                  <HStack justify="space-between" w="full">
-                    <Text>Empty Collections</Text>
-                  </HStack>
-                </MenuItem>
-              </MenuList>
-            </Menu>
-          </HStack>
+                  Sign Out
+                </Text>
+                <Menu>
+                  <MenuButton
+                    as={Button}
+                    size="sm"
+                    variant="ghost"
+                    leftIcon={<ViewIcon />}
+                    rightIcon={<ChevronDownIcon />}
+                  >
+                    View
+                  </MenuButton>
+                  <MenuList>
+                    <MenuItem
+                      onClick={toggleEmptyCollections}
+                      icon={showEmptyCollections ? <CheckIcon /> : undefined}
+                    >
+                      <HStack justify="space-between" w="full">
+                        <Text>Empty Collections</Text>
+                      </HStack>
+                    </MenuItem>
+                  </MenuList>
+                </Menu>
+              </HStack>
+            </>
+          )}
         </Box>
 
         {/* Collections Grid */}
@@ -186,7 +225,7 @@ export const CollectionSelector = ({ onLogout }: CollectionSelectorProps) => {
                   cursor="pointer"
                   onClick={() => navigate(`/collection/${collection.id}`)}
                   _hover={{
-                    transform: 'translateY(-4px)',
+                    transform: isMobile ? 'none' : 'translateY(-4px)',
                     shadow: 'lg',
                     borderColor: collection.color
                   }}
@@ -195,69 +234,123 @@ export const CollectionSelector = ({ onLogout }: CollectionSelectorProps) => {
                   borderWidth={2}
                   borderColor={`${collection.color}40`}
                 >
-                  <CardBody>
-                    <VStack align="start" spacing={3}>
-                      <Box fontSize="4xl">{collection.icon}</Box>
-                      <Heading size="md" color="calm.textPrimary">
-                        {collection.name}
-                      </Heading>
-                      {(collection.nameDevanagari || collection.nameTamil) && (
-                        <Text fontSize="sm" color="gray.600">
-                          {collection.nameDevanagari || collection.nameTamil}
-                        </Text>
-                      )}
-                      {/* Drive folder path for troubleshooting */}
-                      {collection.driveFolderPath && (
-                        <Text fontSize="xs" color="gray.500">
-                          {collection.driveFolderPath}
-                        </Text>
-                      )}
-                      <HStack spacing={2} justify="space-between" w="full">
-                        <Text fontSize="sm" color="gray.500">
-                          <Text as="span" fontWeight="medium">{documentCounts[collection.id] || 0}</Text> documents
-                        </Text>
-                        <HStack spacing={1}>
-                          <Tooltip label="Edit collection" hasArrow>
+                  <CardBody py={{ base: 2, md: 4 }} px={{ base: 3, md: 4 }}>
+                    {/* Mobile: Compact 2-line layout */}
+                    {isMobile ? (
+                      <VStack align="stretch" spacing={1}>
+                        {/* Line 1: Icon, Name, Edit, Refresh, Delete */}
+                        <HStack justify="space-between" align="center">
+                          <HStack spacing={2} flex="1" minW="0">
+                            <Text fontSize="xl">{collection.icon}</Text>
+                            <Text fontWeight="semibold" color="calm.textPrimary" noOfLines={1} flex="1">
+                              {collection.name}
+                            </Text>
+                          </HStack>
+                          <HStack spacing={0}>
                             <IconButton
-                              aria-label="Edit collection"
+                              aria-label="Edit"
                               icon={<EditIcon />}
-                              size="sm"
+                              size="xs"
                               variant="ghost"
                               colorScheme="blue"
                               onClick={(e) => { e.stopPropagation(); handleEditOpen(collection) }}
                             />
-                          </Tooltip>
-                          <Tooltip label="Scan for changes" hasArrow>
                             <IconButton
-                              aria-label="Scan collection"
+                              aria-label="Refresh"
                               icon={scanning[collection.id] ? <Spinner size="xs" /> : <RepeatIcon />}
-                              size="sm"
+                              size="xs"
                               variant="ghost"
                               colorScheme="orange"
                               onClick={(e) => { e.stopPropagation(); handleScanNow(collection.id) }}
                               isDisabled={!!scanning[collection.id]}
                             />
-                          </Tooltip>
-                          <Tooltip label="Delete collection" hasArrow>
                             <IconButton
-                              aria-label="Delete collection"
+                              aria-label="Delete"
                               icon={deleting[collection.id] ? <Spinner size="xs" /> : <DeleteIcon />}
-                              size="sm"
+                              size="xs"
                               variant="ghost"
                               colorScheme="red"
                               onClick={(e) => { e.stopPropagation(); handleDelete(collection.id, collection.name) }}
                               isDisabled={!!deleting[collection.id]}
                             />
-                          </Tooltip>
+                          </HStack>
                         </HStack>
-                      </HStack>
-                      {/* Scan error, if any */}
-                      {scanErrors[collection.id] && (
-                        <Text fontSize="xs" color="red.600">
-                          {scanErrors[collection.id]}
+                        {/* Line 2: Folder path (count) */}
+                        <Text fontSize="xs" color="gray.500" noOfLines={1}>
+                          {collection.driveFolderPath || 'No folder'} ({documentCounts[collection.id] || 0})
                         </Text>
-                      )}
-                    </VStack>
+                        {/* Scan error */}
+                        {scanErrors[collection.id] && (
+                          <Text fontSize="xs" color="red.600" noOfLines={1}>
+                            {scanErrors[collection.id]}
+                          </Text>
+                        )}
+                      </VStack>
+                    ) : (
+                      /* Desktop: Original layout */
+                      <VStack align="start" spacing={3}>
+                        <Box fontSize="4xl">{collection.icon}</Box>
+                        <Heading size="md" color="calm.textPrimary">
+                          {collection.name}
+                        </Heading>
+                        {(collection.nameDevanagari || collection.nameTamil) && (
+                          <Text fontSize="sm" color="gray.600">
+                            {collection.nameDevanagari || collection.nameTamil}
+                          </Text>
+                        )}
+                        {/* Drive folder path for troubleshooting */}
+                        {collection.driveFolderPath && (
+                          <Text fontSize="xs" color="gray.500">
+                            {collection.driveFolderPath}
+                          </Text>
+                        )}
+                        <HStack spacing={2} justify="space-between" w="full">
+                          <Text fontSize="sm" color="gray.500">
+                            <Text as="span" fontWeight="medium">{documentCounts[collection.id] || 0}</Text> documents
+                          </Text>
+                          <HStack spacing={1}>
+                            <Tooltip label="Edit collection" hasArrow>
+                              <IconButton
+                                aria-label="Edit collection"
+                                icon={<EditIcon />}
+                                size="sm"
+                                variant="ghost"
+                                colorScheme="blue"
+                                onClick={(e) => { e.stopPropagation(); handleEditOpen(collection) }}
+                              />
+                            </Tooltip>
+                            <Tooltip label="Scan for changes" hasArrow>
+                              <IconButton
+                                aria-label="Scan collection"
+                                icon={scanning[collection.id] ? <Spinner size="xs" /> : <RepeatIcon />}
+                                size="sm"
+                                variant="ghost"
+                                colorScheme="orange"
+                                onClick={(e) => { e.stopPropagation(); handleScanNow(collection.id) }}
+                                isDisabled={!!scanning[collection.id]}
+                              />
+                            </Tooltip>
+                            <Tooltip label="Delete collection" hasArrow>
+                              <IconButton
+                                aria-label="Delete collection"
+                                icon={deleting[collection.id] ? <Spinner size="xs" /> : <DeleteIcon />}
+                                size="sm"
+                                variant="ghost"
+                                colorScheme="red"
+                                onClick={(e) => { e.stopPropagation(); handleDelete(collection.id, collection.name) }}
+                                isDisabled={!!deleting[collection.id]}
+                              />
+                            </Tooltip>
+                          </HStack>
+                        </HStack>
+                        {/* Scan error, if any */}
+                        {scanErrors[collection.id] && (
+                          <Text fontSize="xs" color="red.600">
+                            {scanErrors[collection.id]}
+                          </Text>
+                        )}
+                      </VStack>
+                    )}
                   </CardBody>
                 </Card>
               ))}
@@ -270,19 +363,28 @@ export const CollectionSelector = ({ onLogout }: CollectionSelectorProps) => {
                 borderWidth={2}
                 borderColor="gray.300"
                 bg="gray.50"
-                _hover={{ 
+                _hover={{
                   borderColor: 'calm.accent',
                   bg: 'gray.100'
                 }}
                 transition="all 0.2s"
               >
-                <CardBody>
-                  <VStack justify="center" h="full" spacing={3}>
-                    <Icon as={AddIcon} fontSize="2xl" color="gray.400" />
-                    <Text color="gray.600" fontWeight="medium">
-                      Add Collection
-                    </Text>
-                  </VStack>
+                <CardBody py={{ base: 2, md: 4 }} px={{ base: 3, md: 4 }}>
+                  {isMobile ? (
+                    <HStack justify="center" spacing={2}>
+                      <Icon as={AddIcon} fontSize="md" color="gray.400" />
+                      <Text color="gray.600" fontWeight="medium" fontSize="sm">
+                        Add Collection
+                      </Text>
+                    </HStack>
+                  ) : (
+                    <VStack justify="center" h="full" spacing={3}>
+                      <Icon as={AddIcon} fontSize="2xl" color="gray.400" />
+                      <Text color="gray.600" fontWeight="medium">
+                        Add Collection
+                      </Text>
+                    </VStack>
+                  )}
                 </CardBody>
               </Card>
             </SimpleGrid>

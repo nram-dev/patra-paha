@@ -1,6 +1,14 @@
 import { extendTheme } from '@chakra-ui/react'
 
 export const theme = extendTheme({
+  breakpoints: {
+    base: '0em',
+    sm: '30em',    // 480px - mobile landscape
+    md: '48em',    // 768px - tablet
+    lg: '62em',    // 992px - small desktop
+    xl: '80em',    // 1280px - desktop
+    '2xl': '96em', // 1536px - large desktop
+  },
   colors: {
     calm: {
       background: '#FFFFFF',

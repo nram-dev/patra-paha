@@ -20,6 +20,8 @@ interface SongListProps {
   showEmptyState?: boolean
   categoryLabel?: string  // e.g., "deity" or "category"
   itemsLabel?: string     // e.g., "Songs" or "Items"
+  // Responsive props
+  isFullWidth?: boolean   // When true, takes full width (mobile)
 }
 
 export default function SongList({
@@ -37,6 +39,7 @@ export default function SongList({
   showEmptyState = true,
   categoryLabel = 'deity',
   itemsLabel = 'Songs',
+  isFullWidth = false,
 }: SongListProps) {
   const { colorMode } = useColorMode()
 
@@ -67,10 +70,10 @@ export default function SongList({
 
     return (
       <Box
-        w="280px"
+        w={isFullWidth ? '100%' : '280px'}
         h="100%"
         bg={colorMode === 'dark' ? 'dark.panelSecondary' : 'calm.panelSecondary'}
-        borderRight="1px"
+        borderRight={isFullWidth ? 'none' : '1px'}
         borderColor={colorMode === 'dark' ? 'dark.border' : 'calm.border'}
         p={4}
       >
@@ -176,10 +179,10 @@ export default function SongList({
 
   return (
     <Box
-      w="280px"
+      w={isFullWidth ? '100%' : '280px'}
       h="100%"
       bg={colorMode === 'dark' ? 'dark.panelSecondary' : 'calm.panelSecondary'}
-      borderRight="1px"
+      borderRight={isFullWidth ? 'none' : '1px'}
       borderColor={colorMode === 'dark' ? 'dark.border' : 'calm.border'}
       overflowY="auto"
     >

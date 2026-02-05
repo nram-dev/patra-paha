@@ -1,4 +1,4 @@
-import { Box, IconButton, useToast, HStack, Text, Spinner, VStack, Menu, MenuButton, MenuList, MenuItem, Button, useColorMode, Input, Select } from '@chakra-ui/react'
+import { Box, IconButton, useToast, HStack, Text, Spinner, VStack, Menu, MenuButton, MenuList, MenuItem, Button, useColorMode, Input, Select, Drawer, DrawerOverlay, DrawerContent, DrawerCloseButton, DrawerHeader, DrawerBody, useDisclosure, useBreakpointValue } from '@chakra-ui/react'
 import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon, ExternalLinkIcon, CloseIcon, DeleteIcon } from '@chakra-ui/icons'
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
@@ -48,6 +48,17 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
   const toast = useToast()
   const { colorMode } = useColorMode()
   const { collections, setScanError, clearScanError } = useCollectionStore()
+
+  // Responsive breakpoints
+  const isMobile = useBreakpointValue({ base: true, md: false }) ?? true
+  const isTablet = useBreakpointValue({ base: false, md: true, lg: false }) ?? false
+  const isDesktop = useBreakpointValue({ base: false, lg: true }) ?? false
+
+  // Mobile drawer for navigation
+  const { isOpen: isDrawerOpen, onOpen: onDrawerOpen, onClose: onDrawerClose } = useDisclosure()
+
+  // Mobile panel state
+  const [activeMobilePanel, setActiveMobilePanel] = useState<'categories' | 'songs' | 'viewer' | 'audio'>('songs')
   
   const [deities, setDeities] = useState<Deity[]>([])
   const [selectedDeity, setSelectedDeity] = useState<Deity | null>(null)
@@ -696,10 +707,40 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
         onToggleEmptyCategories={toggleEmptyCategories}
         showingFavorites={showingFavorites}
         onFavoritesSelect={handleFavoritesSelect}
+        // Responsive props
+        categories={showEmptyCategories ? deities : deities.filter(d => d.songCount > 0)}
+        selectedCategory={selectedDeity}
+        onCategorySelect={handleDeitySelect}
+        onMobileMenuOpen={onDrawerOpen}
       />
+      {/* Mobile Drawer for Categories */}
+      <Drawer isOpen={isDrawerOpen} placement="left" onClose={onDrawerClose}>
+        <DrawerOverlay />
+        <DrawerContent bg={colorMode === 'dark' ? 'dark.panelPrimary' : 'calm.panelPrimary'}>
+          <DrawerCloseButton />
+          <DrawerHeader borderBottomWidth="1px">{categoryLabel}</DrawerHeader>
+          <DrawerBody p={0}>
+            <Navigation
+              deities={showEmptyCategories ? deities : deities.filter(d => d.songCount > 0)}
+              selectedDeity={selectedDeity}
+              onDeitySelect={(deity) => {
+                handleDeitySelect(deity)
+                onDrawerClose()
+                if (isMobile) setActiveMobilePanel('songs')
+              }}
+              showingFavorites={showingFavorites}
+              loading={loading}
+              categoryLabel={categoryLabel}
+              itemLabel={itemLabel}
+              isDrawerMode
+            />
+          </DrawerBody>
+        </DrawerContent>
+      </Drawer>
+
       <Box flex="1" display="flex" overflow="hidden" position="relative">
-        {/* Column 1: Navigation */}
-        {!isColumn1Collapsed && (
+        {/* Column 1: Navigation - Desktop only */}
+        {isDesktop && !isColumn1Collapsed && (
           <Navigation
             deities={showEmptyCategories ? deities : deities.filter(d => d.songCount > 0)}
             selectedDeity={selectedDeity}
@@ -710,31 +751,34 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
             itemLabel={itemLabel}
           />
         )}
-        
-        {/* Toggle button for Column 1 */}
-        <IconButton
-          aria-label={isColumn1Collapsed ? 'Expand navigation' : 'Collapse navigation'}
-          icon={isColumn1Collapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />}
-          onClick={toggleColumn1}
-          size="sm"
-          position="absolute"
-          left={isColumn1Collapsed ? 0 : '200px'}
-          top="50%"
-          transform="translateY(-50%)"
-          zIndex={10}
-          variant="solid"
-          opacity={0.7}
-          _hover={{ opacity: 1 }}
-          transition="all 0.3s"
-        />
+
+        {/* Toggle button for Column 1 - Desktop only */}
+        {isDesktop && (
+          <IconButton
+            aria-label={isColumn1Collapsed ? 'Expand navigation' : 'Collapse navigation'}
+            icon={isColumn1Collapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />}
+            onClick={toggleColumn1}
+            size="sm"
+            position="absolute"
+            left={isColumn1Collapsed ? 0 : '200px'}
+            top="50%"
+            transform="translateY(-50%)"
+            zIndex={10}
+            variant="solid"
+            opacity={0.7}
+            _hover={{ opacity: 1 }}
+            transition="all 0.3s"
+          />
+        )}
 
         {/* Column 2: Song List */}
-        {!isColumn2Collapsed && (
+        {/* Desktop/Tablet: Show based on collapse state; Mobile: Show only when activeMobilePanel is 'songs' */}
+        {((isDesktop || isTablet) && !isColumn2Collapsed) || (isMobile && activeMobilePanel === 'songs') ? (
           <Box
-            w="280px"
+            w={{ base: '100%', md: '240px', lg: '280px' }}
             h="100%"
             bg={colorMode === 'dark' ? 'dark.panelSecondary' : 'calm.panelSecondary'}
-            borderRight="1px"
+            borderRight={{ base: 'none', md: '1px' }}
             borderColor={colorMode === 'dark' ? 'dark.border' : 'calm.border'}
             overflowY="auto"
           >
@@ -971,62 +1015,87 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
               )}
             </Box>
           </Box>
+        ) : null}
+
+        {/* Toggle button for Column 2 - Desktop only */}
+        {isDesktop && (
+          <IconButton
+            aria-label={isColumn2Collapsed ? 'Expand song list' : 'Collapse song list'}
+            icon={isColumn2Collapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />}
+            onClick={toggleColumn2}
+            size="sm"
+            position="absolute"
+            left={
+              isColumn1Collapsed
+                ? (isColumn2Collapsed ? '0px' : '280px')
+                : (isColumn2Collapsed ? '200px' : '480px')
+            }
+            top="50%"
+            transform="translateY(-50%)"
+            zIndex={10}
+            variant="solid"
+            opacity={0.7}
+            _hover={{ opacity: 1 }}
+            transition="all 0.3s"
+          />
         )}
-        
-        {/* Toggle button for Column 2 */}
-        <IconButton
-          aria-label={isColumn2Collapsed ? 'Expand song list' : 'Collapse song list'}
-          icon={isColumn2Collapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />}
-          onClick={toggleColumn2}
-          size="sm"
-          position="absolute"
-          left={
-            isColumn1Collapsed 
-              ? (isColumn2Collapsed ? '0px' : '280px')
-              : (isColumn2Collapsed ? '200px' : '480px')
-          }
-          top="50%"
-          transform="translateY(-50%)"
-          zIndex={10}
-          variant="solid"
-          opacity={0.7}
-          _hover={{ opacity: 1 }}
-          transition="all 0.3s"
-        />
 
         {/* Column 3: Doc + Audio Viewer */}
-        <Box flex="1" display="flex" flexDirection="column" minW="0">
-          <Box flex="1" minH="0" display="flex">
-            <SongViewer
-              song={selectedSong}
-              loading={viewerLoading}
-              externalUrl={externalUrl}
-              externalTitle={externalUrlTitle}
-              onDetectedExternalUrl={setDocExternalUrl}
-              onExternalUrlSelect={(url) => {
-                setDocExternalUrl(url)
-              }}
-              onClearExternal={() => {
-                setExternalUrl(null)
-                setExternalUrlTitle(null)
-              }}
-              onPrev={selectedSong ? () => handleAdjacentSelect('prev') : undefined}
-              onNext={selectedSong ? () => handleAdjacentSelect('next') : undefined}
-              hasPrev={selectedSong ? viewableSongs.findIndex(song => song.id === selectedSong.id) > 0 : false}
-              hasNext={selectedSong ? viewableSongs.findIndex(song => song.id === selectedSong.id) < viewableSongs.length - 1 : false}
-            />
+        {/* Desktop/Tablet: Always show; Mobile: Show based on activeMobilePanel */}
+        {(!isMobile || activeMobilePanel === 'viewer') && (
+          <Box flex="1" display="flex" flexDirection="column" minW="0">
+            <Box flex="1" minH="0" display="flex">
+              <SongViewer
+                song={selectedSong}
+                loading={viewerLoading}
+                externalUrl={externalUrl}
+                externalTitle={externalUrlTitle}
+                onDetectedExternalUrl={setDocExternalUrl}
+                onExternalUrlSelect={(url) => {
+                  setDocExternalUrl(url)
+                }}
+                onClearExternal={() => {
+                  setExternalUrl(null)
+                  setExternalUrlTitle(null)
+                }}
+                onPrev={selectedSong ? () => handleAdjacentSelect('prev') : undefined}
+                onNext={selectedSong ? () => handleAdjacentSelect('next') : undefined}
+                hasPrev={selectedSong ? viewableSongs.findIndex(song => song.id === selectedSong.id) > 0 : false}
+                hasNext={selectedSong ? viewableSongs.findIndex(song => song.id === selectedSong.id) < viewableSongs.length - 1 : false}
+              />
+            </Box>
+            {/* Audio panel - hide on mobile (shown separately) */}
+            {!isMobile && (
+              <Box
+                h={`${audioPanelHeight}px`}
+                borderTop="1px"
+                borderColor={colorMode === 'dark' ? 'dark.border' : 'calm.border'}
+                flexShrink={0}
+              >
+                <AudioPanel
+                  nowPlayingSong={nowPlayingSong}
+                  loading={audioLoading}
+                  panelHeight={audioPanelHeight}
+                  onHeightChange={setAudioPanelHeight}
+                  onPrev={nowPlayingSong ? () => handleAudioAdjacentSelect('prev') : undefined}
+                  onNext={nowPlayingSong ? () => handleAudioAdjacentSelect('next') : undefined}
+                  hasPrev={nowPlayingSong ? audioQueue.findIndex(song => song.id === nowPlayingSong.id) > 0 : false}
+                  hasNext={nowPlayingSong ? audioQueue.findIndex(song => song.id === nowPlayingSong.id) < audioQueue.length - 1 : false}
+                  autoExternalUrl={autoExternalUrl}
+                />
+              </Box>
+            )}
           </Box>
-          <Box
-            h={`${audioPanelHeight}px`}
-            borderTop="1px"
-            borderColor={colorMode === 'dark' ? 'dark.border' : 'calm.border'}
-            flexShrink={0}
-          >
+        )}
+
+        {/* Mobile Audio Panel - shown when audio tab is active */}
+        {isMobile && activeMobilePanel === 'audio' && (
+          <Box flex="1" display="flex" flexDirection="column" minW="0">
             <AudioPanel
               nowPlayingSong={nowPlayingSong}
               loading={audioLoading}
-              panelHeight={audioPanelHeight}
-              onHeightChange={setAudioPanelHeight}
+              panelHeight={400}
+              onHeightChange={() => {}}
               onPrev={nowPlayingSong ? () => handleAudioAdjacentSelect('prev') : undefined}
               onNext={nowPlayingSong ? () => handleAudioAdjacentSelect('next') : undefined}
               hasPrev={nowPlayingSong ? audioQueue.findIndex(song => song.id === nowPlayingSong.id) > 0 : false}
@@ -1034,8 +1103,60 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
               autoExternalUrl={autoExternalUrl}
             />
           </Box>
-        </Box>
+        )}
       </Box>
+
+      {/* Mobile Bottom Tab Bar */}
+      {isMobile && (
+        <HStack
+          bg={colorMode === 'dark' ? 'dark.surface' : 'calm.surface'}
+          borderTop="1px"
+          borderColor={colorMode === 'dark' ? 'dark.border' : 'calm.border'}
+          px={2}
+          py={2}
+          justify="space-around"
+          position="sticky"
+          bottom={0}
+          zIndex={10}
+        >
+          <Button
+            variant={activeMobilePanel === 'songs' ? 'solid' : 'ghost'}
+            colorScheme={activeMobilePanel === 'songs' ? 'orange' : undefined}
+            size="sm"
+            flexDir="column"
+            h="auto"
+            py={2}
+            onClick={() => setActiveMobilePanel('songs')}
+          >
+            <Text fontSize="lg">📄</Text>
+            <Text fontSize="xs">{itemsLabel}</Text>
+          </Button>
+          <Button
+            variant={activeMobilePanel === 'viewer' ? 'solid' : 'ghost'}
+            colorScheme={activeMobilePanel === 'viewer' ? 'orange' : undefined}
+            size="sm"
+            flexDir="column"
+            h="auto"
+            py={2}
+            onClick={() => setActiveMobilePanel('viewer')}
+          >
+            <Text fontSize="lg">👁</Text>
+            <Text fontSize="xs">Viewer</Text>
+          </Button>
+          <Button
+            variant={activeMobilePanel === 'audio' ? 'solid' : 'ghost'}
+            colorScheme={activeMobilePanel === 'audio' ? 'orange' : undefined}
+            size="sm"
+            flexDir="column"
+            h="auto"
+            py={2}
+            onClick={() => setActiveMobilePanel('audio')}
+          >
+            <Text fontSize="lg">🎵</Text>
+            <Text fontSize="xs">Audio</Text>
+          </Button>
+        </HStack>
+      )}
       
       <Search
         isOpen={isSearchOpen}

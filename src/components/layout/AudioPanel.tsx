@@ -1,4 +1,4 @@
-import { Box, Button, HStack, IconButton, Input, Spinner, Text, useColorMode } from '@chakra-ui/react'
+import { Box, Button, HStack, VStack, IconButton, Input, Spinner, Text, useColorMode, useBreakpointValue } from '@chakra-ui/react'
 import { ChevronLeftIcon, ChevronRightIcon, CloseIcon, DownloadIcon } from '@chakra-ui/icons'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Song } from '../../types'
@@ -27,6 +27,7 @@ export default function AudioPanel({
   autoExternalUrl,
 }: AudioPanelProps) {
   const { colorMode } = useColorMode()
+  const isMobile = useBreakpointValue({ base: true, md: false }) ?? false
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const lastAudioSongIdRef = useRef<string | null>(null)
   const [playbackRate, setPlaybackRate] = useState(1)
@@ -212,12 +213,29 @@ export default function AudioPanel({
       <Box
         mb={2}
         display="flex"
-        alignItems="center"
+        flexDirection={{ base: 'column', md: 'row' }}
+        alignItems={{ base: 'stretch', md: 'center' }}
         justifyContent="space-between"
-        gap={3}
+        gap={{ base: 2, md: 3 }}
         flexWrap="wrap"
       >
-        <HStack spacing={2} flex="1" minW="280px" justify="flex-start">
+        {/* Now Playing info - show at top on mobile */}
+        <Box flex="1" minW={{ base: 'auto', md: '200px' }} textAlign="center" order={{ base: -1, md: 0 }}>
+          <Text
+            fontSize="sm"
+            color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}
+            noOfLines={1}
+          >
+            {externalEmbedUrl
+              ? `Now Playing: ${externalLabel ?? 'External URL'}`
+              : nowPlayingSong
+              ? `Now Playing: ${nowPlayingSong.name}`
+              : 'Select audio to play'}
+          </Text>
+        </Box>
+
+        {/* URL input - full width on mobile */}
+        <HStack spacing={2} flex={{ base: 'auto', md: '1' }} minW={{ base: 'auto', md: '280px' }} justify="flex-start">
           <Text fontSize="xs" color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}>
             URL:
           </Text>
@@ -226,7 +244,8 @@ export default function AudioPanel({
             value={externalUrlInput}
             onChange={(event) => setExternalUrlInput(event.target.value)}
             placeholder="Paste YouTube or Spotify URL"
-            w="260px"
+            flex="1"
+            maxW={{ base: 'none', md: '260px' }}
             list="recent-external-urls"
           />
           <Box as="datalist" id="recent-external-urls">
@@ -251,20 +270,9 @@ export default function AudioPanel({
             />
           )}
         </HStack>
-        <Box flex="1" minW="200px" textAlign="center">
-          <Text
-            fontSize="sm"
-            color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}
-            noOfLines={1}
-          >
-            {externalEmbedUrl
-              ? `Now Playing: ${externalLabel ?? 'External URL'}`
-              : nowPlayingSong
-              ? `Now Playing: ${nowPlayingSong.name}`
-              : 'Select audio to play'}
-          </Text>
-        </Box>
-        <HStack spacing={2} flex="1" minW="280px" justify="flex-end">
+
+        {/* Navigation and controls */}
+        <HStack spacing={2} flex={{ base: 'auto', md: '1' }} minW={{ base: 'auto', md: '280px' }} justify={{ base: 'center', md: 'flex-end' }}>
           <Button
             size="xs"
             leftIcon={<ChevronLeftIcon />}
@@ -291,19 +299,24 @@ export default function AudioPanel({
             target="_blank"
             isDisabled={!!externalEmbedUrl || !nowPlayingSong?.imageUrl}
           />
-          <Text fontSize="xs" color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}>
-            Height:
-          </Text>
-          {heightPresets.map((preset) => (
-            <IconButton
-              key={preset.label}
-              aria-label={`Set height ${preset.label.toLowerCase()}`}
-              size="xs"
-              icon={<Box boxSize={preset.iconSize} bg="currentColor" />}
-              variant={panelHeight === preset.value ? 'solid' : 'outline'}
-              onClick={() => onHeightChange(preset.value)}
-            />
-          ))}
+          {/* Height controls - hide on mobile */}
+          {!isMobile && (
+            <>
+              <Text fontSize="xs" color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}>
+                Height:
+              </Text>
+              {heightPresets.map((preset) => (
+                <IconButton
+                  key={preset.label}
+                  aria-label={`Set height ${preset.label.toLowerCase()}`}
+                  size="xs"
+                  icon={<Box boxSize={preset.iconSize} bg="currentColor" />}
+                  variant={panelHeight === preset.value ? 'solid' : 'outline'}
+                  onClick={() => onHeightChange(preset.value)}
+                />
+              ))}
+            </>
+          )}
         </HStack>
       </Box>
       {externalError && (
@@ -340,85 +353,165 @@ export default function AudioPanel({
                 onPause={() => setIsPlaying(false)}
                 onEnded={() => setIsPlaying(false)}
               />
-              <HStack spacing={2} mt={2} justify="space-between" align="center" w="100%">
-                <HStack spacing={2} flex="1" justify="flex-start">
-                  <Button
-                    size="xs"
-                    onClick={togglePlayPause}
-                    bg={isPlaying ? 'green.400' : 'orange.400'}
-                    color="white"
-                    _hover={{ bg: isPlaying ? 'green.500' : 'orange.500' }}
-                  >
-                    {isPlaying ? 'Pause' : 'Play'}
-                  </Button>
-                  <Button
-                    size="xs"
-                    onClick={replayFromStart}
-                    bg={colorMode === 'dark' ? 'purple.600' : 'purple.200'}
-                    color={colorMode === 'dark' ? 'whiteAlpha.900' : 'purple.900'}
-                    _hover={{ bg: colorMode === 'dark' ? 'purple.500' : 'purple.300' }}
-                  >
-                    Replay
-                  </Button>
-                </HStack>
-                <HStack spacing={2} flex="1" justify="center">
-                  {[...skipOptions].reverse().map((seconds) => (
-                    <Button key={`back-${seconds}`} size="xs" onClick={() => adjustTime(-seconds)}>
-                      -{seconds}s
-                    </Button>
-                  ))}
-                  <Text
-                    fontSize="xs"
-                    color={colorMode === 'dark' ? 'whiteAlpha.900' : 'blue.900'}
-                    bg={colorMode === 'dark' ? 'blue.700' : 'blue.200'}
-                    px={2}
-                    py={1}
-                    borderRadius="md"
-                  >
-                    &lt;&lt; Skip &gt;&gt;
-                  </Text>
-                  {skipOptions.map((seconds) => (
-                    <Button key={`forward-${seconds}`} size="xs" onClick={() => adjustTime(seconds)}>
-                      +{seconds}s
-                    </Button>
-                  ))}
-                </HStack>
-                <HStack spacing={2} flex="1" justify="flex-end">
-                  {speedOptions.map((rate) => (
+              {/* Desktop layout */}
+              {!isMobile ? (
+                <HStack spacing={2} mt={2} justify="space-between" align="center" w="100%">
+                  <HStack spacing={2} flex="1" justify="flex-start">
                     <Button
-                      key={`speed-${rate}`}
                       size="xs"
-                      onClick={() => setPlaybackRate(rate)}
-                      variant={playbackRate === rate ? 'solid' : 'outline'}
-                      fontWeight={rate === 1 ? 'bold' : 'normal'}
-                      fontSize={rate === 1 ? 'sm' : 'xs'}
-                      bg={
-                        rate === 1
-                          ? colorMode === 'dark'
-                            ? 'purple.600'
-                            : 'purple.200'
-                          : undefined
-                      }
-                      color={
-                        rate === 1
-                          ? colorMode === 'dark'
-                            ? 'whiteAlpha.900'
-                            : 'purple.900'
-                          : undefined
-                      }
-                      _hover={
-                        rate === 1
-                          ? {
-                              bg: colorMode === 'dark' ? 'purple.500' : 'purple.300',
-                            }
-                          : undefined
-                      }
+                      onClick={togglePlayPause}
+                      bg={isPlaying ? 'green.400' : 'orange.400'}
+                      color="white"
+                      _hover={{ bg: isPlaying ? 'green.500' : 'orange.500' }}
                     >
-                      {rate === 1 ? 'Normal Speed' : `${rate}x`}
+                      {isPlaying ? 'Pause' : 'Play'}
                     </Button>
-                  ))}
+                    <Button
+                      size="xs"
+                      onClick={replayFromStart}
+                      bg={colorMode === 'dark' ? 'purple.600' : 'purple.200'}
+                      color={colorMode === 'dark' ? 'whiteAlpha.900' : 'purple.900'}
+                      _hover={{ bg: colorMode === 'dark' ? 'purple.500' : 'purple.300' }}
+                    >
+                      Replay
+                    </Button>
+                  </HStack>
+                  <HStack spacing={2} flex="1" justify="center">
+                    {[...skipOptions].reverse().map((seconds) => (
+                      <Button key={`back-${seconds}`} size="xs" onClick={() => adjustTime(-seconds)}>
+                        -{seconds}s
+                      </Button>
+                    ))}
+                    <Text
+                      fontSize="xs"
+                      color={colorMode === 'dark' ? 'whiteAlpha.900' : 'blue.900'}
+                      bg={colorMode === 'dark' ? 'blue.700' : 'blue.200'}
+                      px={2}
+                      py={1}
+                      borderRadius="md"
+                    >
+                      &lt;&lt; Skip &gt;&gt;
+                    </Text>
+                    {skipOptions.map((seconds) => (
+                      <Button key={`forward-${seconds}`} size="xs" onClick={() => adjustTime(seconds)}>
+                        +{seconds}s
+                      </Button>
+                    ))}
+                  </HStack>
+                  <HStack spacing={2} flex="1" justify="flex-end">
+                    {speedOptions.map((rate) => (
+                      <Button
+                        key={`speed-${rate}`}
+                        size="xs"
+                        onClick={() => setPlaybackRate(rate)}
+                        variant={playbackRate === rate ? 'solid' : 'outline'}
+                        fontWeight={rate === 1 ? 'bold' : 'normal'}
+                        fontSize={rate === 1 ? 'sm' : 'xs'}
+                        bg={
+                          rate === 1
+                            ? colorMode === 'dark'
+                              ? 'purple.600'
+                              : 'purple.200'
+                            : undefined
+                        }
+                        color={
+                          rate === 1
+                            ? colorMode === 'dark'
+                              ? 'whiteAlpha.900'
+                              : 'purple.900'
+                            : undefined
+                        }
+                        _hover={
+                          rate === 1
+                            ? {
+                                bg: colorMode === 'dark' ? 'purple.500' : 'purple.300',
+                              }
+                            : undefined
+                        }
+                      >
+                        {rate === 1 ? 'Normal Speed' : `${rate}x`}
+                      </Button>
+                    ))}
+                  </HStack>
                 </HStack>
-              </HStack>
+              ) : (
+                /* Mobile layout - stacked controls */
+                <VStack spacing={3} mt={3} align="stretch">
+                  {/* Play controls */}
+                  <HStack spacing={2} justify="center">
+                    <Button
+                      size="sm"
+                      onClick={togglePlayPause}
+                      bg={isPlaying ? 'green.400' : 'orange.400'}
+                      color="white"
+                      _hover={{ bg: isPlaying ? 'green.500' : 'orange.500' }}
+                      minW="80px"
+                    >
+                      {isPlaying ? 'Pause' : 'Play'}
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={replayFromStart}
+                      bg={colorMode === 'dark' ? 'purple.600' : 'purple.200'}
+                      color={colorMode === 'dark' ? 'whiteAlpha.900' : 'purple.900'}
+                      _hover={{ bg: colorMode === 'dark' ? 'purple.500' : 'purple.300' }}
+                    >
+                      Replay
+                    </Button>
+                  </HStack>
+                  {/* Skip controls */}
+                  <HStack spacing={1} justify="center" flexWrap="wrap">
+                    {[...skipOptions].reverse().map((seconds) => (
+                      <Button key={`back-${seconds}`} size="xs" onClick={() => adjustTime(-seconds)}>
+                        -{seconds}s
+                      </Button>
+                    ))}
+                    <Text
+                      fontSize="xs"
+                      color={colorMode === 'dark' ? 'whiteAlpha.900' : 'blue.900'}
+                      bg={colorMode === 'dark' ? 'blue.700' : 'blue.200'}
+                      px={2}
+                      py={1}
+                      borderRadius="md"
+                    >
+                      Skip
+                    </Text>
+                    {skipOptions.map((seconds) => (
+                      <Button key={`forward-${seconds}`} size="xs" onClick={() => adjustTime(seconds)}>
+                        +{seconds}s
+                      </Button>
+                    ))}
+                  </HStack>
+                  {/* Speed controls */}
+                  <HStack spacing={1} justify="center" flexWrap="wrap">
+                    {speedOptions.map((rate) => (
+                      <Button
+                        key={`speed-${rate}`}
+                        size="xs"
+                        onClick={() => setPlaybackRate(rate)}
+                        variant={playbackRate === rate ? 'solid' : 'outline'}
+                        fontWeight={rate === 1 ? 'bold' : 'normal'}
+                        bg={
+                          playbackRate === rate
+                            ? colorMode === 'dark'
+                              ? 'purple.600'
+                              : 'purple.200'
+                            : undefined
+                        }
+                        color={
+                          playbackRate === rate
+                            ? colorMode === 'dark'
+                              ? 'whiteAlpha.900'
+                              : 'purple.900'
+                            : undefined
+                        }
+                      >
+                        {rate}x
+                      </Button>
+                    ))}
+                  </HStack>
+                </VStack>
+              )}
             </Box>
           ) : !nowPlayingSong ? (
             <Box flex="1" display="flex" alignItems="center" justifyContent="center">

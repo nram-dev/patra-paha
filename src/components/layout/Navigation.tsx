@@ -10,6 +10,8 @@ interface NavigationProps {
   loading: boolean
   categoryLabel?: string  // e.g., "Deities" or "Categories"
   itemLabel?: string      // e.g., "song" or "item"
+  // Responsive props
+  isDrawerMode?: boolean  // When rendered inside a drawer
 }
 
 export default function Navigation({
@@ -20,15 +22,16 @@ export default function Navigation({
   loading,
   categoryLabel = 'Deities',
   itemLabel = 'song',
+  isDrawerMode = false,
 }: NavigationProps) {
   const { colorMode } = useColorMode()
 
   return (
     <Box
-      w="200px"
+      w={isDrawerMode ? '100%' : '200px'}
       h="100%"
       bg={colorMode === 'dark' ? 'dark.panelPrimary' : 'calm.panelPrimary'}
-      borderRight="1px"
+      borderRight={isDrawerMode ? 'none' : '1px'}
       borderColor={colorMode === 'dark' ? 'dark.border' : 'calm.border'}
       overflowY="auto"
     >
