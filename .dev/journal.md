@@ -403,6 +403,33 @@ Redesigned the Add New Collection screen with predefined presets and improved UX
 
 ---
 
+## 2026-02-04: Streamline Audio Controls UI
+
+### Feature
+Replaced text buttons with icon-only controls for a cleaner, more compact audio panel.
+
+### Changes Made
+
+#### 1. Icon-Only Buttons
+**File:** `src/components/layout/AudioPanel.tsx`
+- Play/Pause: Unicode icons (▶ / ❚❚) with colored backgrounds
+- Replay: Chakra `RepeatIcon`
+- Prev/Next: Icon-only chevron buttons (removed text labels)
+- Skip indicator: Double chevron icon replacing "<< Skip >>" text
+
+#### 2. Simplified Labels
+- Changed "Now Playing:" to "Playing:"
+- Changed "Normal Speed" to "1x"
+- Removed "Height:" label (kept size preset icons)
+
+#### 3. Updated Skip Options
+- Changed from [5, 10, 30, 60] to [5, 15, 30] seconds
+
+### Files Modified
+- `src/components/layout/AudioPanel.tsx` - Icon buttons, label changes, skip options
+
+---
+
 ## 2026-02-04: Responsive UI for Mobile and Tablet
 
 ### Feature
