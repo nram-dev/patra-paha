@@ -268,7 +268,7 @@ export const AddCollection = () => {
         {/* Header */}
         <Box textAlign="center" w="full">
           <Box fontSize="4xl" mb={2}>{config.icon}</Box>
-          <Heading size="lg" mb={2}>Add New Collection</Heading>
+          <Heading size="lg" mb={2} color="gray.800">Add New Collection</Heading>
           <Text color="gray.600">
             Connect a Google Drive folder to create a new collection
           </Text>
@@ -278,7 +278,7 @@ export const AddCollection = () => {
         <VStack spacing={5} w="full" bg="white" p={6} borderRadius="md" shadow="sm">
           {/* Predefined Type Selection - At Top */}
           <FormControl>
-            <FormLabel>Predefined</FormLabel>
+            <FormLabel color="gray.700">Predefined</FormLabel>
             <Menu>
               <MenuButton
                 as={Button}
@@ -333,13 +333,15 @@ export const AddCollection = () => {
 
           {/* Google Drive Folder Name with Icon and Color */}
           <FormControl isRequired>
-            <FormLabel>Google Drive Folder Name</FormLabel>
+            <FormLabel color="gray.700">Google Drive Folder Name</FormLabel>
             <Flex gap={2} align="center">
               <Input
                 flex={1}
                 value={folderName}
                 onChange={(e) => handleFolderNameChange(e.target.value)}
                 placeholder="e.g., MyRecipes, StudyNotes, Bhajans"
+                color="gray.800"
+                _placeholder={{ color: 'gray.400' }}
               />
 
               {/* Icon Dropdown */}
@@ -429,11 +431,13 @@ export const AddCollection = () => {
 
           {/* Collection Name */}
           <FormControl>
-            <FormLabel>Collection Name</FormLabel>
+            <FormLabel color="gray.700">Collection Name</FormLabel>
             <Input
               value={collectionName}
               onChange={(e) => handleCollectionNameChange(e.target.value)}
               placeholder={folderName.trim() || 'Same as folder name'}
+              color="gray.800"
+              _placeholder={{ color: 'gray.400' }}
             />
           </FormControl>
 
@@ -441,8 +445,8 @@ export const AddCollection = () => {
             <Alert status="error" borderRadius="md">
               <AlertIcon />
               <Box>
-                <AlertTitle>Error</AlertTitle>
-                <AlertDescription>{error}</AlertDescription>
+                <AlertTitle color="red.800">Error</AlertTitle>
+                <AlertDescription color="red.700">{error}</AlertDescription>
               </Box>
             </Alert>
           )}
@@ -464,8 +468,8 @@ export const AddCollection = () => {
         <Alert status="info" borderRadius="md">
           <AlertIcon />
           <Box>
-            <AlertTitle>Need Help?</AlertTitle>
-            <AlertDescription>
+            <AlertTitle color="blue.800">Need Help?</AlertTitle>
+            <AlertDescription color="blue.700">
               Make sure the folder exists in your Google Drive and you have given
               PatraPaha permission to access your Drive files.
             </AlertDescription>
