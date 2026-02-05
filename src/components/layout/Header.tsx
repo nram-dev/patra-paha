@@ -2,7 +2,7 @@ import { Box, Flex, HStack, Text, IconButton, Button, Menu, MenuButton, MenuList
 import { useColorMode } from '@chakra-ui/react'
 import { MoonIcon, SunIcon, SearchIcon, ChevronDownIcon, ArrowBackIcon, StarIcon, HamburgerIcon, ExternalLinkIcon } from '@chakra-ui/icons'
 import { useNavigate } from 'react-router-dom'
-import { TitleLanguage, Deity } from '../../types'
+import { TitleLanguage, Deity, Collection } from '../../types'
 
 // Layout mode type
 export type LayoutMode = 'auto' | 'tablet' | 'desktop'
@@ -33,6 +33,7 @@ interface HeaderProps {
   onLanguageChange: (language: TitleLanguage) => void
   collectionName?: string
   collectionIcon?: string
+  collectionId?: string
   showingFavorites?: boolean
   onFavoritesSelect?: () => void
   // Responsive props
@@ -48,6 +49,8 @@ interface HeaderProps {
   onFontSizeChange?: (size: FontSize) => void
   // Document title to display in header
   documentTitle?: string
+  // Collections for desktop dropdown
+  collections?: Collection[]
 }
 
 export default function Header({
@@ -57,6 +60,7 @@ export default function Header({
   onLanguageChange: _onLanguageChange,
   collectionName,
   collectionIcon,
+  collectionId,
   showingFavorites = false,
   onFavoritesSelect,
   categories,
@@ -68,6 +72,7 @@ export default function Header({
   fontSize,
   onFontSizeChange,
   documentTitle,
+  collections,
 }: HeaderProps) {
   const { colorMode, toggleColorMode } = useColorMode()
   const navigate = useNavigate()
@@ -159,7 +164,51 @@ export default function Header({
                 </Tooltip>
               )}
 
-              {/* Category dropdown for tablet - positioned before collection name */}
+              {/* Collection dropdown for Tablet/Desktop - easy switching between collections */}
+              {(isTablet || isDesktop) && collections && collections.length > 1 ? (
+                <Menu>
+                  <MenuButton
+                    as={Button}
+                    size="sm"
+                    variant="ghost"
+                    rightIcon={<ChevronDownIcon />}
+                    fontWeight="bold"
+                    fontSize={{ md: 'md', lg: 'lg' }}
+                    px={2}
+                    _hover={{
+                      bg: colorMode === 'dark' ? 'dark.border' : 'calm.border',
+                    }}
+                  >
+                    {collectionIcon} {collectionName}
+                  </MenuButton>
+                  <MenuList
+                    bg={colorMode === 'dark' ? 'dark.surface' : 'calm.surface'}
+                    borderColor={colorMode === 'dark' ? 'dark.border' : 'calm.border'}
+                    minW="200px"
+                  >
+                    {collections.map(col => (
+                      <MenuItem
+                        key={col.id}
+                        onClick={() => navigate(`/collection/${col.id}`)}
+                        bg={col.id === collectionId ? (colorMode === 'dark' ? 'dark.accent' : 'calm.accent') : 'transparent'}
+                        color={col.id === collectionId ? 'white' : undefined}
+                        _hover={{
+                          bg: col.id === collectionId ? undefined : (colorMode === 'dark' ? 'dark.border' : 'calm.border'),
+                        }}
+                      >
+                        {col.icon} {col.name}
+                      </MenuItem>
+                    ))}
+                  </MenuList>
+                </Menu>
+              ) : (
+                /* Collection icon and name - simple text when only one collection */
+                <Text fontSize={{ base: 'md', md: 'lg' }} fontWeight="bold" noOfLines={1}>
+                  {collectionIcon} {!isMobile && collectionName}
+                </Text>
+              )}
+
+              {/* Category dropdown for tablet - after collection dropdown */}
               {isTablet && categories && onCategorySelect && (
                 <Menu>
                   <MenuButton
@@ -195,11 +244,6 @@ export default function Header({
                   </MenuList>
                 </Menu>
               )}
-
-              {/* Collection icon and name */}
-              <Text fontSize={{ base: 'md', md: 'lg' }} fontWeight="bold" noOfLines={1}>
-                {collectionIcon} {!isMobile && collectionName}
-              </Text>
             </>
           ) : (
             <>

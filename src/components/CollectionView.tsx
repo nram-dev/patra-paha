@@ -142,6 +142,16 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
     }
   }, [collection, collectionId, navigate, toast])
 
+  // Clear Items panel when collection changes
+  useEffect(() => {
+    setSongs([])
+    setSelectedSong(null)
+    setSelectedDeity(null)
+    setShowingFavorites(false)
+    setExternalUrl(null)
+    setExternalUrlTitle(null)
+  }, [collectionId])
+
   // Load language preference from settings
   useEffect(() => {
     const loadLanguage = async () => {
@@ -737,6 +747,7 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
         onLanguageChange={handleLanguageChange}
         collectionName={collection.name}
         collectionIcon={collection.icon}
+        collectionId={collection.id}
         showingFavorites={showingFavorites}
         onFavoritesSelect={handleFavoritesSelect}
         // Responsive props
@@ -752,6 +763,8 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
         onFontSizeChange={setFontSize}
         // Document title
         documentTitle={selectedSong?.metadata?.title || selectedSong?.name}
+        // Collections for desktop dropdown
+        collections={collections}
       />
       {/* Mobile Drawer for Categories */}
       <Drawer isOpen={isDrawerOpen} placement="left" onClose={onDrawerClose}>
@@ -865,89 +878,6 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
                   </MenuList>
                 </Menu>
               </HStack>
-
-              <Box
-                mb={4}
-                p={3}
-                borderRadius="md"
-                bg={colorMode === 'dark' ? 'dark.background' : 'calm.background'}
-                borderWidth="1px"
-                borderColor={colorMode === 'dark' ? 'dark.border' : 'calm.border'}
-              >
-                <Text
-                  fontSize="sm"
-                  fontWeight="bold"
-                  color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}
-                  textTransform="uppercase"
-                  letterSpacing="wide"
-                  mb={2}
-                >
-                  URL
-                </Text>
-                <HStack spacing={2}>
-                  <Input
-                    size="sm"
-                    placeholder="https://example.com"
-                    value={urlInput}
-                    onChange={e => setUrlInput(e.target.value)}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault()
-                        openExternalUrl(urlInput)
-                      }
-                    }}
-                  />
-                  <IconButton
-                    aria-label="Open URL"
-                    size="sm"
-                    icon={<ExternalLinkIcon />}
-                    onClick={() => openExternalUrl(urlInput)}
-                  />
-                  <IconButton
-                    aria-label="Clear URL"
-                    size="sm"
-                    variant="ghost"
-                    icon={<CloseIcon />}
-                    isDisabled={!externalUrl}
-                    onClick={() => {
-                      setExternalUrl(null)
-                      setExternalUrlTitle(null)
-                    }}
-                  />
-                </HStack>
-                {recentUrls.length > 0 && (
-                  <HStack spacing={2} mt={2} align="center">
-                    <Select
-                      size="sm"
-                      placeholder="Recent URLs"
-                      value=""
-                      onChange={e => {
-                        if (e.target.value) {
-                          setUrlInput(e.target.value)
-                          openExternalUrl(e.target.value)
-                        }
-                      }}
-                    >
-                      {recentUrls.map(entry => (
-                        <option key={entry.url} value={entry.url}>
-                          {entry.title} — {entry.url}
-                        </option>
-                      ))}
-                    </Select>
-                    <IconButton
-                      aria-label="Clear recent URLs"
-                      size="sm"
-                      variant="ghost"
-                      icon={<DeleteIcon />}
-                      onClick={() => {
-                        if (!collectionId) return
-                        localStorage.removeItem(`recentUrls:${collectionId}`)
-                        setRecentUrls([])
-                      }}
-                    />
-                  </HStack>
-                )}
-              </Box>
 
               {loading ? (
                 <Box textAlign="center" py={8}>

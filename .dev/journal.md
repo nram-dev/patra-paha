@@ -1,5 +1,46 @@
 # Development Journal
 
+## 2026-02-05: Add Collections Dropdown to Header
+
+### Feature
+Added a Collections dropdown in the header for tablet and desktop modes, allowing users to quickly switch between collections without navigating back to the home page.
+
+### Changes Made
+
+#### 1. Header Collections Dropdown
+**File:** `src/components/layout/Header.tsx`
+- Added `collections` and `collectionId` props to HeaderProps interface
+- Added Collection dropdown menu that shows in both tablet and desktop modes
+- Dropdown displays all collections with icons, current collection is highlighted
+- Clicking a collection navigates directly to it via `navigate(/collection/${id})`
+- Falls back to plain text when only one collection exists
+- Reordered so Collection dropdown appears before Category dropdown
+
+#### 2. Pass Collections to Header
+**File:** `src/components/CollectionView.tsx`
+- Added `collectionId={collection.id}` prop to Header
+- Added `collections={collections}` prop to Header
+
+#### 3. Clear Items Panel on Collection Change
+**File:** `src/components/CollectionView.tsx`
+- Added useEffect that clears state when collectionId changes:
+  - `songs` → empty array
+  - `selectedSong` → null
+  - `selectedDeity` → null
+  - `showingFavorites` → false
+  - `externalUrl` / `externalUrlTitle` → null
+
+### User Experience
+- Header now shows: `← ★ [Collection ▼] [Category ▼]` in tablet/desktop
+- Switching collections immediately clears the Items panel
+- Provides faster navigation between collections without going to home page
+
+### Files Modified
+- `src/components/layout/Header.tsx` - Collections dropdown menu
+- `src/components/CollectionView.tsx` - Pass collections, clear state on change
+
+---
+
 ## 2026-02-05: Add Document Links Section to Items Panel
 
 ### Feature
