@@ -28,6 +28,7 @@ export default function AudioPanel({
 }: AudioPanelProps) {
   const { colorMode } = useColorMode()
   const isMobile = useBreakpointValue({ base: true, md: false }) ?? false
+  const isDesktop = useBreakpointValue({ base: false, lg: true }) ?? false
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const lastAudioSongIdRef = useRef<string | null>(null)
   const [playbackRate, setPlaybackRate] = useState(1)
@@ -142,6 +143,8 @@ export default function AudioPanel({
 
   useEffect(() => {
     if (!autoExternalUrl) return
+    // Don't auto-set external URL if local audio is already playing
+    if (nowPlayingSong?.imageUrl) return
     const resolved = resolveExternalEmbed(autoExternalUrl)
     if (!resolved) return
     if (externalEmbedUrl === resolved.embedUrl && externalLabel === resolved.label) return
@@ -149,7 +152,7 @@ export default function AudioPanel({
     setExternalEmbedUrl(resolved.embedUrl)
     setExternalLabel(resolved.label)
     setExternalError(null)
-  }, [autoExternalUrl, externalEmbedUrl, externalLabel, resolveExternalEmbed])
+  }, [autoExternalUrl, nowPlayingSong?.imageUrl, externalEmbedUrl, externalLabel, resolveExternalEmbed])
 
   const handleExternalPlay = () => {
     const trimmedInput = externalUrlInput.trim()
@@ -273,20 +276,42 @@ export default function AudioPanel({
 
         {/* Navigation and controls */}
         <HStack spacing={2} flex={{ base: 'auto', md: '1' }} minW={{ base: 'auto', md: '280px' }} justify={{ base: 'center', md: 'flex-end' }}>
-          <IconButton
-            aria-label="Previous"
-            size="xs"
-            icon={<ChevronLeftIcon />}
-            onClick={onPrev}
-            isDisabled={!hasPrev || !onPrev || !nowPlayingSong || loading}
-          />
-          <IconButton
-            aria-label="Next"
-            size="xs"
-            icon={<ChevronRightIcon />}
-            onClick={onNext}
-            isDisabled={!hasNext || !onNext || !nowPlayingSong || loading}
-          />
+          {isDesktop ? (
+            <Button
+              size="xs"
+              leftIcon={<ChevronLeftIcon />}
+              onClick={onPrev}
+              isDisabled={!hasPrev || !onPrev || !nowPlayingSong || loading}
+            >
+              Prev
+            </Button>
+          ) : (
+            <IconButton
+              aria-label="Previous"
+              size="xs"
+              icon={<ChevronLeftIcon />}
+              onClick={onPrev}
+              isDisabled={!hasPrev || !onPrev || !nowPlayingSong || loading}
+            />
+          )}
+          {isDesktop ? (
+            <Button
+              size="xs"
+              rightIcon={<ChevronRightIcon />}
+              onClick={onNext}
+              isDisabled={!hasNext || !onNext || !nowPlayingSong || loading}
+            >
+              Next
+            </Button>
+          ) : (
+            <IconButton
+              aria-label="Next"
+              size="xs"
+              icon={<ChevronRightIcon />}
+              onClick={onNext}
+              isDisabled={!hasNext || !onNext || !nowPlayingSong || loading}
+            />
+          )}
           <IconButton
             aria-label="Download audio"
             icon={<DownloadIcon />}
@@ -348,28 +373,52 @@ export default function AudioPanel({
                 onPause={() => setIsPlaying(false)}
                 onEnded={() => setIsPlaying(false)}
               />
-              {/* Desktop layout */}
+              {/* Desktop/Tablet layout */}
               {!isMobile ? (
                 <HStack spacing={2} mt={2} justify="space-between" align="center" w="100%">
                   <HStack spacing={2} flex="1" justify="flex-start">
-                    <IconButton
-                      aria-label={isPlaying ? 'Pause' : 'Play'}
-                      size="xs"
-                      onClick={togglePlayPause}
-                      bg={isPlaying ? 'green.400' : 'orange.400'}
-                      color="white"
-                      _hover={{ bg: isPlaying ? 'green.500' : 'orange.500' }}
-                      icon={<Text fontSize="sm">{isPlaying ? '❚❚' : '▶'}</Text>}
-                    />
-                    <IconButton
-                      aria-label="Replay from start"
-                      size="xs"
-                      onClick={replayFromStart}
-                      bg={colorMode === 'dark' ? 'purple.600' : 'purple.200'}
-                      color={colorMode === 'dark' ? 'whiteAlpha.900' : 'purple.900'}
-                      _hover={{ bg: colorMode === 'dark' ? 'purple.500' : 'purple.300' }}
-                      icon={<RepeatIcon />}
-                    />
+                    {isDesktop ? (
+                      <Button
+                        size="xs"
+                        onClick={togglePlayPause}
+                        bg={isPlaying ? 'green.400' : 'orange.400'}
+                        color="white"
+                        _hover={{ bg: isPlaying ? 'green.500' : 'orange.500' }}
+                      >
+                        {isPlaying ? 'Pause' : 'Play'}
+                      </Button>
+                    ) : (
+                      <IconButton
+                        aria-label={isPlaying ? 'Pause' : 'Play'}
+                        size="xs"
+                        onClick={togglePlayPause}
+                        bg={isPlaying ? 'green.400' : 'orange.400'}
+                        color="white"
+                        _hover={{ bg: isPlaying ? 'green.500' : 'orange.500' }}
+                        icon={<Text fontSize="sm">{isPlaying ? '❚❚' : '▶'}</Text>}
+                      />
+                    )}
+                    {isDesktop ? (
+                      <Button
+                        size="xs"
+                        onClick={replayFromStart}
+                        bg={colorMode === 'dark' ? 'purple.600' : 'purple.200'}
+                        color={colorMode === 'dark' ? 'whiteAlpha.900' : 'purple.900'}
+                        _hover={{ bg: colorMode === 'dark' ? 'purple.500' : 'purple.300' }}
+                      >
+                        Replay
+                      </Button>
+                    ) : (
+                      <IconButton
+                        aria-label="Replay from start"
+                        size="xs"
+                        onClick={replayFromStart}
+                        bg={colorMode === 'dark' ? 'purple.600' : 'purple.200'}
+                        color={colorMode === 'dark' ? 'whiteAlpha.900' : 'purple.900'}
+                        _hover={{ bg: colorMode === 'dark' ? 'purple.500' : 'purple.300' }}
+                        icon={<RepeatIcon />}
+                      />
+                    )}
                   </HStack>
                   <HStack spacing={2} flex="1" justify="center">
                     {[...skipOptions].reverse().map((seconds) => (
@@ -377,18 +426,31 @@ export default function AudioPanel({
                         -{seconds}s
                       </Button>
                     ))}
-                    <Box
-                      display="flex"
-                      alignItems="center"
-                      color={colorMode === 'dark' ? 'whiteAlpha.900' : 'blue.900'}
-                      bg={colorMode === 'dark' ? 'blue.700' : 'blue.200'}
-                      px={2}
-                      py={1}
-                      borderRadius="md"
-                    >
-                      <ChevronLeftIcon boxSize={4} />
-                      <ChevronRightIcon boxSize={4} ml={-1} />
-                    </Box>
+                    {isDesktop ? (
+                      <Text
+                        fontSize="xs"
+                        color={colorMode === 'dark' ? 'whiteAlpha.900' : 'blue.900'}
+                        bg={colorMode === 'dark' ? 'blue.700' : 'blue.200'}
+                        px={2}
+                        py={1}
+                        borderRadius="md"
+                      >
+                        Skip
+                      </Text>
+                    ) : (
+                      <Box
+                        display="flex"
+                        alignItems="center"
+                        color={colorMode === 'dark' ? 'whiteAlpha.900' : 'blue.900'}
+                        bg={colorMode === 'dark' ? 'blue.700' : 'blue.200'}
+                        px={2}
+                        py={1}
+                        borderRadius="md"
+                      >
+                        <ChevronLeftIcon boxSize={4} />
+                        <ChevronRightIcon boxSize={4} ml={-1} />
+                      </Box>
+                    )}
                     {skipOptions.map((seconds) => (
                       <Button key={`forward-${seconds}`} size="xs" onClick={() => adjustTime(seconds)}>
                         +{seconds}s
