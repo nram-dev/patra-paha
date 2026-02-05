@@ -100,6 +100,7 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
   const [urlInput, setUrlInput] = useState('')
   const [recentUrls, setRecentUrls] = useState<Array<{ title: string; url: string; lastUsed: string }>>([])
   const [docExternalUrl, setDocExternalUrl] = useState<string | null>(null)
+  const [fontSize, setFontSize] = useState<'small' | 'medium' | 'large' | 'xlarge'>('medium')
 
   useEffect(() => {
     setDocExternalUrl(null)
@@ -746,6 +747,11 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
         // Layout mode override
         layoutMode={layoutMode}
         onLayoutModeChange={handleLayoutModeChange}
+        // Font size controls
+        fontSize={fontSize}
+        onFontSizeChange={setFontSize}
+        // Document title
+        documentTitle={selectedSong?.metadata?.title || selectedSong?.name}
       />
       {/* Mobile Drawer for Categories */}
       <Drawer isOpen={isDrawerOpen} placement="left" onClose={onDrawerClose}>
@@ -1154,6 +1160,7 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
                 onNext={selectedSong ? () => handleAdjacentSelect('next') : undefined}
                 hasPrev={selectedSong ? viewableSongs.findIndex(song => song.id === selectedSong.id) > 0 : false}
                 hasNext={selectedSong ? viewableSongs.findIndex(song => song.id === selectedSong.id) < viewableSongs.length - 1 : false}
+                fontSize={fontSize}
               />
             </Box>
             {/* Audio panel - hide on mobile (shown separately) */}

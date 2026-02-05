@@ -1,3 +1,9 @@
+## 2026-02-05
+
+- Moved font size controls (A-/A+) from document panel to header bar for better accessibility and cleaner document view.
+- Moved document title from document panel to header bar, displayed centered with larger bold text for prominence.
+- Font size state is now managed at CollectionView level and shared between Header and SongViewer components.
+
 ## 2026-02-04
 
 - Moved Favorites button from Categories panel (column 1) to the header, displaying as a star icon before the collection name for better visibility and space efficiency.

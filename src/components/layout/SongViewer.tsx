@@ -26,6 +26,7 @@ interface SongViewerProps {
   onNext?: () => void
   hasPrev?: boolean
   hasNext?: boolean
+  fontSize?: 'small' | 'medium' | 'large' | 'xlarge'
 }
 
 export default function SongViewer({
@@ -40,10 +41,9 @@ export default function SongViewer({
   onNext,
   hasPrev,
   hasNext,
+  fontSize = 'medium',
 }: SongViewerProps) {
   const { colorMode } = useColorMode()
-
-  const [fontSize, setFontSize] = useState<'small' | 'medium' | 'large' | 'xlarge'>('medium')
   const [imageZoom, setImageZoom] = useState(100)
   const contentRef = useRef<HTMLDivElement>(null)
   const [pdfNumPages, setPdfNumPages] = useState<number | null>(null)
@@ -609,15 +609,6 @@ export default function SongViewer({
           </Tabs>
         )}
 
-        {/* Title - use language-specific title from __TIT if available */}
-        <Heading
-          size="lg"
-          mb={4}
-          color={colorMode === 'dark' ? 'dark.textPrimary' : 'calm.textPrimary'}
-        >
-          {song.languageMetadata?.[selectedLanguage]?.title || song.languageTitles?.[selectedLanguage] || song.metadata?.title || parsedMetadata?.title || song.name}
-        </Heading>
-
         {/* Metadata table - use language-specific metadata from __RAG, __TAL, etc. */}
         {(song.languageMetadata?.[selectedLanguage] || song.metadata || parsedMetadata?.ragam) && (
           <Box
@@ -729,33 +720,6 @@ export default function SongViewer({
             </VStack>
           </Box>
         )}
-
-        {/* Font size controls */}
-        <HStack mb={4} spacing={2}>
-          <IconButton
-            aria-label="Decrease font size"
-            icon={<Text fontSize="sm">A-</Text>}
-            size="sm"
-            onClick={() => {
-              const sizes: Array<'small' | 'medium' | 'large' | 'xlarge'> = ['small', 'medium', 'large', 'xlarge']
-              const currentIndex = sizes.indexOf(fontSize)
-              if (currentIndex > 0) setFontSize(sizes[currentIndex - 1])
-            }}
-          />
-          <Text fontSize="xs" color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}>
-            {fontSize}
-          </Text>
-          <IconButton
-            aria-label="Increase font size"
-            icon={<Text fontSize="sm">A+</Text>}
-            size="sm"
-            onClick={() => {
-              const sizes: Array<'small' | 'medium' | 'large' | 'xlarge'> = ['small', 'medium', 'large', 'xlarge']
-              const currentIndex = sizes.indexOf(fontSize)
-              if (currentIndex < sizes.length - 1) setFontSize(sizes[currentIndex + 1])
-            }}
-          />
-        </HStack>
 
         {/* Lyrics */}
         <Box

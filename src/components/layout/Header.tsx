@@ -23,6 +23,9 @@ const DesktopIcon = () => (
   </Box>
 )
 
+// Font size type
+export type FontSize = 'small' | 'medium' | 'large' | 'xlarge'
+
 interface HeaderProps {
   onLogout: () => void
   onSearchOpen: () => void
@@ -40,6 +43,11 @@ interface HeaderProps {
   // Layout mode override
   layoutMode?: LayoutMode
   onLayoutModeChange?: (mode: LayoutMode) => void
+  // Font size controls for document viewer
+  fontSize?: FontSize
+  onFontSizeChange?: (size: FontSize) => void
+  // Document title to display in header
+  documentTitle?: string
 }
 
 export default function Header({
@@ -57,6 +65,9 @@ export default function Header({
   onMobileMenuOpen,
   layoutMode = 'auto',
   onLayoutModeChange,
+  fontSize,
+  onFontSizeChange,
+  documentTitle,
 }: HeaderProps) {
   const { colorMode, toggleColorMode } = useColorMode()
   const navigate = useNavigate()
@@ -82,7 +93,30 @@ export default function Header({
       px={{ base: 2, md: 4 }}
       py={{ base: 2, md: 3 }}
       shadow="sm"
+      position="relative"
     >
+      {/* Centered document title - absolutely positioned for true centering */}
+      {!isMobile && documentTitle && collectionName && (
+        <Box
+          position="absolute"
+          left="50%"
+          top="50%"
+          transform="translate(-50%, -50%)"
+          maxW={{ md: '40%', lg: '50%' }}
+          pointerEvents="none"
+        >
+          <Text
+            fontSize={{ md: 'lg', lg: 'xl' }}
+            fontWeight="bold"
+            color={colorMode === 'dark' ? 'dark.textPrimary' : 'calm.textPrimary'}
+            noOfLines={1}
+            textAlign="center"
+          >
+            {documentTitle}
+          </Text>
+        </Box>
+      )}
+
       <Flex justify="space-between" align="center">
         <HStack spacing={{ base: 1, md: 2 }}>
           {/* Mobile hamburger menu */}
@@ -190,6 +224,48 @@ export default function Header({
             size="sm"
             variant="ghost"
           />
+
+          {/* Font size controls for document viewer */}
+          {fontSize && onFontSizeChange && (
+            <HStack spacing={0}>
+              <Tooltip label="Decrease font size" hasArrow>
+                <IconButton
+                  aria-label="Decrease font size"
+                  icon={<Text fontSize="xs">A-</Text>}
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    const sizes: FontSize[] = ['small', 'medium', 'large', 'xlarge']
+                    const currentIndex = sizes.indexOf(fontSize)
+                    if (currentIndex > 0) onFontSizeChange(sizes[currentIndex - 1])
+                  }}
+                  isDisabled={fontSize === 'small'}
+                />
+              </Tooltip>
+              <Text
+                fontSize="xs"
+                color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}
+                minW="50px"
+                textAlign="center"
+              >
+                {fontSize}
+              </Text>
+              <Tooltip label="Increase font size" hasArrow>
+                <IconButton
+                  aria-label="Increase font size"
+                  icon={<Text fontSize="xs">A+</Text>}
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    const sizes: FontSize[] = ['small', 'medium', 'large', 'xlarge']
+                    const currentIndex = sizes.indexOf(fontSize)
+                    if (currentIndex < sizes.length - 1) onFontSizeChange(sizes[currentIndex + 1])
+                  }}
+                  isDisabled={fontSize === 'xlarge'}
+                />
+              </Tooltip>
+            </HStack>
+          )}
 
           {/* Layout mode toggle - tablet/desktop icons */}
           {showLayoutToggle && (
