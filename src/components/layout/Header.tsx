@@ -1,6 +1,6 @@
-import { Box, Flex, HStack, Text, IconButton, Button, Kbd, Menu, MenuButton, MenuList, MenuItem } from '@chakra-ui/react'
+import { Box, Flex, HStack, Text, IconButton, Button, Kbd, Menu, MenuButton, MenuList, MenuItem, Tooltip } from '@chakra-ui/react'
 import { useColorMode } from '@chakra-ui/react'
-import { MoonIcon, SunIcon, SearchIcon, ChevronDownIcon, ArrowBackIcon, ViewIcon, CheckIcon } from '@chakra-ui/icons'
+import { MoonIcon, SunIcon, SearchIcon, ChevronDownIcon, ArrowBackIcon, ViewIcon, CheckIcon, StarIcon } from '@chakra-ui/icons'
 import { useNavigate } from 'react-router-dom'
 import { TitleLanguage } from '../../types'
 
@@ -17,6 +17,8 @@ interface HeaderProps {
   onToggleCategories?: () => void
   onToggleItems?: () => void
   onToggleEmptyCategories?: () => void
+  showingFavorites?: boolean
+  onFavoritesSelect?: () => void
 }
 
 export default function Header({
@@ -32,6 +34,8 @@ export default function Header({
   onToggleCategories,
   onToggleItems,
   onToggleEmptyCategories,
+  showingFavorites = false,
+  onFavoritesSelect,
 }: HeaderProps) {
   const { colorMode, toggleColorMode } = useColorMode()
   const navigate = useNavigate()
@@ -62,6 +66,22 @@ export default function Header({
                 variant="ghost"
                 onClick={() => navigate('/')}
               />
+              {onFavoritesSelect && (
+                <Tooltip label="Favorites" hasArrow>
+                  <IconButton
+                    aria-label="Favorites"
+                    icon={<StarIcon />}
+                    size="sm"
+                    variant={showingFavorites ? 'solid' : 'ghost'}
+                    colorScheme={showingFavorites ? 'yellow' : undefined}
+                    color={showingFavorites ? 'yellow.500' : (colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary')}
+                    onClick={onFavoritesSelect}
+                    _hover={{
+                      color: 'yellow.500',
+                    }}
+                  />
+                </Tooltip>
+              )}
               <Text fontSize="xl" fontWeight="bold">
                 {collectionIcon} {collectionName}
               </Text>

@@ -1,3 +1,7 @@
+## 2026-02-04
+
+- Moved Favorites button from Categories panel (column 1) to the header, displaying as a star icon before the collection name for better visibility and space efficiency.
+
 ## 2026-02-03
 
 - Improved light theme panel styling: Doc panel now has white background, Category panel uses light gray (#E0E0E0), Items panel uses slightly lighter gray (#EAEAEA) for visual hierarchy.

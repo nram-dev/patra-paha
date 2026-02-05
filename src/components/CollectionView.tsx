@@ -694,6 +694,8 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
         onToggleCategories={toggleColumn1}
         onToggleItems={toggleColumn2}
         onToggleEmptyCategories={toggleEmptyCategories}
+        showingFavorites={showingFavorites}
+        onFavoritesSelect={handleFavoritesSelect}
       />
       <Box flex="1" display="flex" overflow="hidden" position="relative">
         {/* Column 1: Navigation */}
@@ -702,7 +704,6 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
             deities={showEmptyCategories ? deities : deities.filter(d => d.songCount > 0)}
             selectedDeity={selectedDeity}
             onDeitySelect={handleDeitySelect}
-            onFavoritesSelect={handleFavoritesSelect}
             showingFavorites={showingFavorites}
             loading={loading}
             categoryLabel={categoryLabel}

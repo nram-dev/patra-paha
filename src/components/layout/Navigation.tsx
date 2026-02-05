@@ -1,13 +1,11 @@
-import { Box, VStack, Text, Spinner, Divider } from '@chakra-ui/react'
+import { Box, VStack, Text, Spinner } from '@chakra-ui/react'
 import { useColorMode } from '@chakra-ui/react'
-import { StarIcon } from '@chakra-ui/icons'
 import { Deity } from '../../types'
 
 interface NavigationProps {
   deities: Deity[]
   selectedDeity: Deity | null
   onDeitySelect: (deity: Deity | null) => void
-  onFavoritesSelect: () => void
   showingFavorites: boolean
   loading: boolean
   categoryLabel?: string  // e.g., "Deities" or "Categories"
@@ -18,7 +16,6 @@ export default function Navigation({
   deities,
   selectedDeity,
   onDeitySelect,
-  onFavoritesSelect,
   showingFavorites,
   loading,
   categoryLabel = 'Deities',
@@ -36,50 +33,6 @@ export default function Navigation({
       overflowY="auto"
     >
       <Box p={4}>
-        {/* Favorites Section */}
-        <VStack spacing={1} align="stretch" mb={4}>
-          <Box
-            as="button"
-            onClick={onFavoritesSelect}
-            px={3}
-            py={2}
-            borderRadius="md"
-            textAlign="left"
-            bg={
-              showingFavorites
-                ? colorMode === 'dark'
-                  ? 'dark.accent'
-                  : 'calm.accent'
-                : 'transparent'
-            }
-            color={
-              showingFavorites
-                ? 'white'
-                : colorMode === 'dark'
-                ? 'dark.textPrimary'
-                : 'calm.textPrimary'
-            }
-            _hover={{
-              bg:
-                showingFavorites
-                  ? undefined
-                  : colorMode === 'dark'
-                  ? 'dark.border'
-                  : 'calm.border',
-            }}
-            transition="all 0.2s"
-          >
-            <Box display="flex" alignItems="center" gap={2}>
-              <StarIcon boxSize={3} />
-              <Text fontSize="md" fontWeight="semibold">
-                Favorites
-              </Text>
-            </Box>
-          </Box>
-        </VStack>
-
-        <Divider mb={4} borderColor={colorMode === 'dark' ? 'dark.border' : 'calm.border'} />
-
         {/* Categories Section */}
         <Text
           fontSize="sm"
