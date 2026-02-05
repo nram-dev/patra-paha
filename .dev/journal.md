@@ -1,5 +1,75 @@
 # Development Journal
 
+## 2026-02-05: Add Document Links Section to Items Panel
+
+### Feature
+Extract YouTube and Spotify links from document content and display them in a "Links" section in the Items panel (column 2). Clicking a link loads it in the audio panel's embedded iframe.
+
+### Changes Made
+
+#### 1. Link Extraction Utility
+**File:** `src/utils/extractLinks.ts` (new)
+- `extractLinksFromHtml()` - Parses HTML for anchor tags, extracts URL and link text
+- `filterMediaLinks()` - Filters to only YouTube/Spotify links
+- `unwrapGoogleRedirect()` - Unwraps Google Docs redirect URLs (`google.com/url?q=...`)
+- `getLinkType()` - Categorizes links as youtube/spotify/other
+
+#### 2. ExtractedLink Type
+**File:** `src/types/index.ts`
+- Added `ExtractedLink` interface with `url`, `text?`, and `type` fields
+
+#### 3. Links Section in Items Panel
+**File:** `src/components/CollectionView.tsx`
+- Added `documentLinks` memo to extract links from selected document content
+- Added Links section after Audio section in column 2
+- Links display with YT/SP prefix (colored) and link text or "Link 1", "Link 2" for raw URLs
+- Clicking a link clears local audio and loads the URL in the audio panel iframe
+
+#### 4. Iframe Reload Fix
+**File:** `src/components/layout/AudioPanel.tsx`
+- Added `key={externalEmbedUrl}` to iframe to force remount when URL changes
+- Fixes issue where switching links didn't update the video
+
+#### 5. Navigation Cleanup
+**File:** `src/components/layout/Navigation.tsx`
+- Removed link-related code (links now in Items panel instead)
+
+### Files Modified
+- `src/utils/extractLinks.ts` (new) - Link extraction utility
+- `src/types/index.ts` - ExtractedLink type
+- `src/components/CollectionView.tsx` - Links section UI and extraction
+- `src/components/layout/AudioPanel.tsx` - Iframe key for proper reloading
+- `src/components/layout/Navigation.tsx` - Removed unused link props
+
+---
+
+## 2026-02-05: Fix Audio Selection Not Switching from YouTube
+
+### Bug Fix
+When a document had a YouTube link and the folder also contained local audio files, selecting an audio file from the Items Panel would not play the local audio - the YouTube embed would persist.
+
+### Root Cause
+The `autoExternalUrl` prop passed to AudioPanel was computed from `selectedSong` (the document being viewed), not `nowPlayingSong` (the audio file). When a user selected a local audio file:
+1. `nowPlayingSong` was set to the audio file with its blob URL
+2. But `selectedSong` remained the document with the YouTube link
+3. `autoExternalUrl` continued passing the YouTube URL to AudioPanel
+4. AudioPanel's useEffect kept setting `externalEmbedUrl` from `autoExternalUrl`, overriding the local audio selection
+
+### Solution
+Modified AudioPanel's auto-external-URL useEffect to skip setting the external URL when a local audio file is already playing (`nowPlayingSong?.imageUrl` exists).
+
+### Changes Made
+
+#### AudioPanel Auto-URL Logic
+**File:** `src/components/layout/AudioPanel.tsx`
+- Added check: `if (nowPlayingSong?.imageUrl) return` before auto-setting external URL
+- Added `nowPlayingSong?.imageUrl` to useEffect dependencies
+
+### Files Modified
+- `src/components/layout/AudioPanel.tsx` - Skip auto-external-URL when local audio is playing
+
+---
+
 ## 2026-02-05: Fix Add Collection Screen Text Visibility
 
 ### Bug Fix

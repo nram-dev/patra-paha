@@ -78,6 +78,13 @@ export interface DocumentMetadata {
   steps?: string[] // procedure steps
 }
 
+// Extracted link from document content
+export interface ExtractedLink {
+  url: string
+  text?: string  // If present, display this; otherwise "Link1", "Link2", etc.
+  type: 'youtube' | 'spotify' | 'other'
+}
+
 // Language-specific metadata extracted from __TIT, __RAG, __TAL, etc.
 export interface LanguageMetadata {
   title?: string // from __TIT

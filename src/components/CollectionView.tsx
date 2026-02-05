@@ -10,13 +10,14 @@ import SongList from './layout/SongList'
 import SongViewer from './layout/SongViewer'
 import AudioPanel from './layout/AudioPanel'
 import Search from './Search'
-import { Deity, Song, TitleLanguage, Document, SortOption } from '../types'
+import { Deity, Song, TitleLanguage, Document, SortOption, ExtractedLink } from '../types'
 import { useCollectionStore } from '../stores/collectionStore'
 import { getCollectionConfig } from '../config/collections'
 import { parseMultiLanguageContent } from '../services/metadataParser'
 import { extractSongId } from '../utils/songId'
 import { getSongTitle } from '../utils/songTitle'
 import { extractFirstYouTubeUrl } from '../utils/extractYouTubeUrl'
+import { extractLinksFromHtml, filterMediaLinks } from '../utils/extractLinks'
 
 const extractFirstYouTubeUrlFromSong = (song: Song | null): string | null => {
   if (!song) return null
@@ -579,6 +580,26 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
 
   const audioQueue = audioSongs
 
+  // Extract links from the selected song's content (YouTube/Spotify only)
+  const documentLinks: ExtractedLink[] = useMemo(() => {
+    if (!selectedSong?.content) return []
+
+    // Get HTML content - could be string or MultiLanguageContent
+    let htmlContent = ''
+    if (typeof selectedSong.content === 'string') {
+      htmlContent = selectedSong.content
+    } else if (typeof selectedSong.content === 'object') {
+      // Combine all language content for link extraction
+      htmlContent = Object.values(selectedSong.content).join('\n')
+    }
+
+    if (!htmlContent) return []
+
+    // Extract and filter to only YouTube/Spotify links
+    const allLinks = extractLinksFromHtml(htmlContent)
+    return filterMediaLinks(allLinks)
+  }, [selectedSong?.content])
+
   const handleAudioAdjacentSelect = (direction: 'prev' | 'next') => {
     if (!nowPlayingSong) return
     const currentIndex = audioQueue.findIndex(song => song.id === nowPlayingSong.id)
@@ -1022,6 +1043,64 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
                         categoryLabel={categoryLabel}
                         itemsLabel={itemsLabel}
                       />
+                    </Box>
+                  )}
+
+                  {/* Links Section - YouTube/Spotify links from selected document */}
+                  {documentLinks.length > 0 && (
+                    <Box>
+                      <Text
+                        fontSize="sm"
+                        fontWeight="bold"
+                        color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}
+                        textTransform="uppercase"
+                        letterSpacing="wide"
+                        mb={2}
+                      >
+                        Links ({documentLinks.length})
+                      </Text>
+                      <VStack spacing={1} align="stretch">
+                        {documentLinks.map((link, index) => (
+                          <Box
+                            key={`${link.url}-${index}`}
+                            as="button"
+                            onClick={() => {
+                              // Clear local audio so external URL can load
+                              setNowPlayingSong(null)
+                              setAudioBlobUrl(null)
+                              setDocExternalUrl(link.url)
+                            }}
+                            px={3}
+                            py={2}
+                            borderRadius="md"
+                            textAlign="left"
+                            bg="transparent"
+                            _hover={{
+                              bg: colorMode === 'dark' ? 'dark.border' : 'calm.border',
+                            }}
+                            transition="all 0.2s"
+                          >
+                            <HStack spacing={2}>
+                              <Text
+                                fontSize="xs"
+                                fontWeight="bold"
+                                color={link.type === 'youtube' ? '#FF0000' : link.type === 'spotify' ? '#1DB954' : '#718096'}
+                                minW="20px"
+                              >
+                                {link.type === 'youtube' ? 'YT' : link.type === 'spotify' ? 'SP' : ''}
+                              </Text>
+                              <Text
+                                fontSize="sm"
+                                color={colorMode === 'dark' ? 'dark.textPrimary' : 'calm.textPrimary'}
+                                noOfLines={1}
+                                flex={1}
+                              >
+                                {link.text || `Link ${index + 1}`}
+                              </Text>
+                            </HStack>
+                          </Box>
+                        ))}
+                      </VStack>
                     </Box>
                   )}
                 </VStack>

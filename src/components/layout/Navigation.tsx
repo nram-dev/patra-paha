@@ -47,7 +47,7 @@ export default function Navigation({
         >
           {categoryLabel}
         </Text>
-        
+
         {loading && deities.length === 0 ? (
           <Box textAlign="center" py={8}>
             <Spinner size="sm" />
