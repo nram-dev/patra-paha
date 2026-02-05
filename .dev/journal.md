@@ -1,5 +1,29 @@
 # Development Journal
 
+## 2026-02-05: Fix Add Collection Screen Text Visibility
+
+### Bug Fix
+Text in the Add Collection screen was nearly invisible due to missing explicit color definitions, making the form unusable.
+
+### Changes Made
+
+#### 1. Form Element Colors
+**File:** `src/components/AddCollection.tsx`
+- Added `color="gray.800"` to heading
+- Added `color="gray.700"` to all form labels
+- Added `color="gray.800"` to input fields
+- Added `_placeholder={{ color: 'gray.400' }}` for placeholder text
+
+#### 2. Alert Colors
+**File:** `src/components/AddCollection.tsx`
+- Error alert: title `red.800`, description `red.700`
+- Info alert: title `blue.800`, description `blue.700`
+
+### Files Modified
+- `src/components/AddCollection.tsx` - Explicit color definitions for all text elements
+
+---
+
 ## 2026-01-31: Enhance Audio Player Controls
 
 ### Feature
