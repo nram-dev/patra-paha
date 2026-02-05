@@ -1,8 +1,27 @@
-import { Box, Flex, HStack, Text, IconButton, Button, Kbd, Menu, MenuButton, MenuList, MenuItem, Tooltip, useBreakpointValue } from '@chakra-ui/react'
+import { Box, Flex, HStack, Text, IconButton, Button, Menu, MenuButton, MenuList, MenuItem, Tooltip, useBreakpointValue } from '@chakra-ui/react'
 import { useColorMode } from '@chakra-ui/react'
-import { MoonIcon, SunIcon, SearchIcon, ChevronDownIcon, ArrowBackIcon, ViewIcon, CheckIcon, StarIcon, HamburgerIcon, ExternalLinkIcon } from '@chakra-ui/icons'
+import { MoonIcon, SunIcon, SearchIcon, ChevronDownIcon, ArrowBackIcon, StarIcon, HamburgerIcon, ExternalLinkIcon } from '@chakra-ui/icons'
 import { useNavigate } from 'react-router-dom'
 import { TitleLanguage, Deity } from '../../types'
+
+// Layout mode type
+export type LayoutMode = 'auto' | 'tablet' | 'desktop'
+
+// Custom icons for layout modes
+const TabletIcon = () => (
+  <Box as="svg" viewBox="0 0 24 24" w="16px" h="16px" fill="currentColor">
+    <rect x="4" y="2" width="16" height="20" rx="2" stroke="currentColor" strokeWidth="2" fill="none" />
+    <circle cx="12" cy="19" r="1" fill="currentColor" />
+  </Box>
+)
+
+const DesktopIcon = () => (
+  <Box as="svg" viewBox="0 0 24 24" w="16px" h="16px" fill="currentColor">
+    <rect x="2" y="3" width="20" height="14" rx="2" stroke="currentColor" strokeWidth="2" fill="none" />
+    <line x1="8" y1="21" x2="16" y2="21" stroke="currentColor" strokeWidth="2" />
+    <line x1="12" y1="17" x2="12" y2="21" stroke="currentColor" strokeWidth="2" />
+  </Box>
+)
 
 interface HeaderProps {
   onLogout: () => void
@@ -11,12 +30,6 @@ interface HeaderProps {
   onLanguageChange: (language: TitleLanguage) => void
   collectionName?: string
   collectionIcon?: string
-  showCategories?: boolean
-  showItems?: boolean
-  showEmptyCategories?: boolean
-  onToggleCategories?: () => void
-  onToggleItems?: () => void
-  onToggleEmptyCategories?: () => void
   showingFavorites?: boolean
   onFavoritesSelect?: () => void
   // Responsive props
@@ -24,6 +37,9 @@ interface HeaderProps {
   selectedCategory?: Deity | null
   onCategorySelect?: (category: Deity) => void
   onMobileMenuOpen?: () => void
+  // Layout mode override
+  layoutMode?: LayoutMode
+  onLayoutModeChange?: (mode: LayoutMode) => void
 }
 
 export default function Header({
@@ -33,26 +49,30 @@ export default function Header({
   onLanguageChange: _onLanguageChange,
   collectionName,
   collectionIcon,
-  showCategories = true,
-  showItems = true,
-  showEmptyCategories = false,
-  onToggleCategories,
-  onToggleItems,
-  onToggleEmptyCategories,
   showingFavorites = false,
   onFavoritesSelect,
   categories,
   selectedCategory,
   onCategorySelect,
   onMobileMenuOpen,
+  layoutMode = 'auto',
+  onLayoutModeChange,
 }: HeaderProps) {
   const { colorMode, toggleColorMode } = useColorMode()
   const navigate = useNavigate()
 
-  // Responsive breakpoints
-  const isMobile = useBreakpointValue({ base: true, md: false }) ?? true
-  const isTablet = useBreakpointValue({ base: false, md: true, lg: false }) ?? false
-  const isDesktop = useBreakpointValue({ base: false, lg: true }) ?? false
+  // Responsive breakpoints - auto detection
+  const autoIsMobile = useBreakpointValue({ base: true, md: false }) ?? true
+  const autoIsTablet = useBreakpointValue({ base: false, md: true, lg: false }) ?? false
+  const autoIsDesktop = useBreakpointValue({ base: false, lg: true }) ?? false
+
+  // Apply layout mode override
+  const isMobile = autoIsMobile
+  const isTablet = layoutMode === 'tablet' ? true : layoutMode === 'desktop' ? false : autoIsTablet
+  const isDesktop = layoutMode === 'desktop' ? true : layoutMode === 'tablet' ? false : autoIsDesktop
+
+  // Show layout toggle when not in mobile mode (auto-detected)
+  const showLayoutToggle = !autoIsMobile && onLayoutModeChange && collectionName
 
   return (
     <Box
@@ -171,69 +191,30 @@ export default function Header({
             variant="ghost"
           />
 
-          {/* View menu - desktop only */}
-          {isDesktop && onToggleCategories && onToggleItems && onToggleEmptyCategories && (
-            <Menu>
-              <MenuButton
-                as={Button}
-                size="sm"
-                variant="ghost"
-                leftIcon={<ViewIcon />}
-                rightIcon={<ChevronDownIcon />}
-              >
-                View
-              </MenuButton>
-              <MenuList
-                bg={colorMode === 'dark' ? 'dark.surface' : 'calm.surface'}
-                borderColor={colorMode === 'dark' ? 'dark.border' : 'calm.border'}
-              >
-                <MenuItem
-                  onClick={onToggleCategories}
-                  icon={showCategories ? <CheckIcon /> : undefined}
-                  _hover={{
-                    bg: colorMode === 'dark' ? 'dark.border' : 'calm.border',
-                  }}
-                >
-                  <HStack justify="space-between" w="full">
-                    <Text>Categories</Text>
-                    <HStack spacing={0.5}>
-                      <Kbd fontSize="xs">Alt</Kbd>
-                      <Kbd fontSize="xs">1</Kbd>
-                    </HStack>
-                  </HStack>
-                </MenuItem>
-                <MenuItem
-                  onClick={onToggleItems}
-                  icon={showItems ? <CheckIcon /> : undefined}
-                  _hover={{
-                    bg: colorMode === 'dark' ? 'dark.border' : 'calm.border',
-                  }}
-                >
-                  <HStack justify="space-between" w="full">
-                    <Text>Items</Text>
-                    <HStack spacing={0.5}>
-                      <Kbd fontSize="xs">Alt</Kbd>
-                      <Kbd fontSize="xs">2</Kbd>
-                    </HStack>
-                  </HStack>
-                </MenuItem>
-                <MenuItem
-                  onClick={onToggleEmptyCategories}
-                  icon={showEmptyCategories ? <CheckIcon /> : undefined}
-                  _hover={{
-                    bg: colorMode === 'dark' ? 'dark.border' : 'calm.border',
-                  }}
-                >
-                  <HStack justify="space-between" w="full">
-                    <Text>Empty Categories</Text>
-                    <HStack spacing={0.5}>
-                      <Kbd fontSize="xs">Alt</Kbd>
-                      <Kbd fontSize="xs">3</Kbd>
-                    </HStack>
-                  </HStack>
-                </MenuItem>
-              </MenuList>
-            </Menu>
+          {/* Layout mode toggle - tablet/desktop icons */}
+          {showLayoutToggle && (
+            <HStack spacing={0}>
+              <Tooltip label="Tablet layout" hasArrow>
+                <IconButton
+                  aria-label="Tablet layout"
+                  icon={<TabletIcon />}
+                  size="sm"
+                  variant={isTablet ? 'solid' : 'ghost'}
+                  colorScheme={isTablet ? 'blue' : undefined}
+                  onClick={() => onLayoutModeChange?.('tablet')}
+                />
+              </Tooltip>
+              <Tooltip label="Desktop layout" hasArrow>
+                <IconButton
+                  aria-label="Desktop layout"
+                  icon={<DesktopIcon />}
+                  size="sm"
+                  variant={isDesktop ? 'solid' : 'ghost'}
+                  colorScheme={isDesktop ? 'blue' : undefined}
+                  onClick={() => onLayoutModeChange?.('desktop')}
+                />
+              </Tooltip>
+            </HStack>
           )}
 
           {/* Theme toggle */}

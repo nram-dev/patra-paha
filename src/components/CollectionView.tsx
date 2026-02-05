@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { driveService } from '../services/driveService'
 import { db } from '../db/database'
-import Header from './layout/Header'
+import Header, { LayoutMode } from './layout/Header'
 import Navigation from './layout/Navigation'
 import SongList from './layout/SongList'
 import SongViewer from './layout/SongViewer'
@@ -49,10 +49,26 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
   const { colorMode } = useColorMode()
   const { collections, setScanError, clearScanError } = useCollectionStore()
 
-  // Responsive breakpoints
-  const isMobile = useBreakpointValue({ base: true, md: false }) ?? true
-  const isTablet = useBreakpointValue({ base: false, md: true, lg: false }) ?? false
-  const isDesktop = useBreakpointValue({ base: false, lg: true }) ?? false
+  // Responsive breakpoints - auto detection
+  const autoIsMobile = useBreakpointValue({ base: true, md: false }) ?? true
+  const autoIsTablet = useBreakpointValue({ base: false, md: true, lg: false }) ?? false
+  const autoIsDesktop = useBreakpointValue({ base: false, lg: true }) ?? false
+
+  // Layout mode override (persisted in localStorage)
+  const [layoutMode, setLayoutMode] = useState<LayoutMode>(() => {
+    const stored = localStorage.getItem('layoutMode')
+    return (stored as LayoutMode) || 'auto'
+  })
+
+  const handleLayoutModeChange = (mode: LayoutMode) => {
+    setLayoutMode(mode)
+    localStorage.setItem('layoutMode', mode)
+  }
+
+  // Apply layout mode override (only affects non-mobile)
+  const isMobile = autoIsMobile
+  const isTablet = layoutMode === 'tablet' ? true : layoutMode === 'desktop' ? false : autoIsTablet
+  const isDesktop = layoutMode === 'desktop' ? true : layoutMode === 'tablet' ? false : autoIsDesktop
 
   // Mobile drawer for navigation
   const { isOpen: isDrawerOpen, onOpen: onDrawerOpen, onClose: onDrawerClose } = useDisclosure()
@@ -699,12 +715,6 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
         onLanguageChange={handleLanguageChange}
         collectionName={collection.name}
         collectionIcon={collection.icon}
-        showCategories={!isColumn1Collapsed}
-        showItems={!isColumn2Collapsed}
-        showEmptyCategories={showEmptyCategories}
-        onToggleCategories={toggleColumn1}
-        onToggleItems={toggleColumn2}
-        onToggleEmptyCategories={toggleEmptyCategories}
         showingFavorites={showingFavorites}
         onFavoritesSelect={handleFavoritesSelect}
         // Responsive props
@@ -712,6 +722,9 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
         selectedCategory={selectedDeity}
         onCategorySelect={handleDeitySelect}
         onMobileMenuOpen={onDrawerOpen}
+        // Layout mode override
+        layoutMode={layoutMode}
+        onLayoutModeChange={handleLayoutModeChange}
       />
       {/* Mobile Drawer for Categories */}
       <Drawer isOpen={isDrawerOpen} placement="left" onClose={onDrawerClose}>
