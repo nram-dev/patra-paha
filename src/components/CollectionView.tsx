@@ -39,11 +39,7 @@ const extractFirstYouTubeUrlFromSong = (song: Song | null): string | null => {
   return extractFirstYouTubeUrl(contentValues)
 }
 
-interface CollectionViewProps {
-  onLogout: () => void
-}
-
-export const CollectionView = ({ onLogout }: CollectionViewProps) => {
+export const CollectionView = () => {
   const { collectionId } = useParams<{ collectionId: string }>()
   const navigate = useNavigate()
   const toast = useToast()
@@ -764,7 +760,6 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
   return (
     <Box h="100vh" display="flex" flexDirection="column" bg="calm.background">
       <Header
-        onLogout={onLogout}
         onSearchOpen={() => setIsSearchOpen(true)}
         language={language}
         onLanguageChange={handleLanguageChange}

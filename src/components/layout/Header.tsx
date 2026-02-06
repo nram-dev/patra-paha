@@ -1,6 +1,6 @@
 import { Box, Flex, HStack, Text, IconButton, Button, Menu, MenuButton, MenuList, MenuItem, Tooltip, useBreakpointValue } from '@chakra-ui/react'
 import { useColorMode } from '@chakra-ui/react'
-import { MoonIcon, SunIcon, SearchIcon, ChevronDownIcon, ArrowBackIcon, StarIcon, HamburgerIcon, ExternalLinkIcon } from '@chakra-ui/icons'
+import { MoonIcon, SunIcon, SearchIcon, ChevronDownIcon, ArrowBackIcon, StarIcon, HamburgerIcon } from '@chakra-ui/icons'
 import { useNavigate } from 'react-router-dom'
 import { TitleLanguage, Deity, Collection } from '../../types'
 
@@ -27,7 +27,6 @@ const DesktopIcon = () => (
 export type FontSize = 'small' | 'medium' | 'large' | 'xlarge'
 
 interface HeaderProps {
-  onLogout: () => void
   onSearchOpen: () => void
   language: TitleLanguage
   onLanguageChange: (language: TitleLanguage) => void
@@ -54,7 +53,6 @@ interface HeaderProps {
 }
 
 export default function Header({
-  onLogout,
   onSearchOpen,
   language: _language,
   onLanguageChange: _onLanguageChange,
@@ -349,29 +347,6 @@ export default function Header({
             variant="ghost"
             size="sm"
           />
-
-          {/* Sign out - icon on tablet, text on desktop, hidden on mobile */}
-          {isDesktop ? (
-            <Text
-              as="button"
-              onClick={onLogout}
-              fontSize="sm"
-              color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}
-              _hover={{ color: colorMode === 'dark' ? 'dark.textPrimary' : 'calm.textPrimary' }}
-            >
-              Sign Out
-            </Text>
-          ) : isTablet ? (
-            <Tooltip label="Sign Out" hasArrow>
-              <IconButton
-                aria-label="Sign out"
-                icon={<ExternalLinkIcon />}
-                onClick={onLogout}
-                size="sm"
-                variant="ghost"
-              />
-            </Tooltip>
-          ) : null}
         </HStack>
       </Flex>
     </Box>

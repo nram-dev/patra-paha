@@ -148,9 +148,9 @@ function App() {
     <Routes>
       <Route path="/" element={<CollectionSelector />} />
       <Route path="/add-collection" element={<AddCollection />} />
-      <Route 
-        path="/collection/:collectionId" 
-        element={<CollectionView onLogout={handleLogout} />} 
+      <Route
+        path="/collection/:collectionId"
+        element={<CollectionView />}
       />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

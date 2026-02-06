@@ -459,7 +459,7 @@ export const CollectionSelector = ({ onLogout }: CollectionSelectorProps) => {
         {/* Footer Note */}
         <Box textAlign="center" pt={8} pb={4}>
           <Text fontSize="sm" color="gray.400" fontWeight="normal">
-            Version 2.5.39 © 2026 Edge2.Cloud
+            Version 2.5.41 © 2026 Edge2.Cloud
           </Text>
         </Box>
       </VStack>
@@ -626,7 +626,7 @@ export const CollectionSelector = ({ onLogout }: CollectionSelectorProps) => {
               {/* Version */}
               <Box>
                 <Text fontWeight="semibold" mb={1}>Version</Text>
-                <Text fontSize="sm" color="gray.600">2.5.28</Text>
+                <Text fontSize="sm" color="gray.600">2.5.41</Text>
               </Box>
 
               {/* Developer Info */}
