@@ -115,7 +115,8 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
   const [language, setLanguage] = useState<TitleLanguage>('english')
   const [isColumn1Collapsed, setIsColumn1Collapsed] = useState(false)
   const [isColumn2Collapsed, setIsColumn2Collapsed] = useState(false)
-  // Track if user manually toggled column 2 (to avoid overriding their preference)
+  // Track if user manually toggled columns (to avoid overriding their preference)
+  const userToggledColumn1 = useRef(false)
   const userToggledColumn2 = useRef(false)
   const [showEmptyCategories, setShowEmptyCategories] = useState(false)
   const [sortBy, setSortBy] = useState<SortOption>('alphabetical')
@@ -253,18 +254,37 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
     setShowEmptyCategories(emptyCategories)
   }, [])
 
-  // Auto-collapse song list in tablet portrait mode
+  // Auto-collapse panels based on layout mode
+  // Desktop: expand all panels
+  // Tablet Landscape: collapse Column 1 (Categories)
+  // Tablet Portrait: collapse both Column 1 and Column 2
   useEffect(() => {
-    if (isTablet) {
+    if (isDesktop) {
+      // Desktop mode: expand all panels
+      setIsColumn1Collapsed(false)
+      setIsColumn2Collapsed(false)
+      setIsAudioPanelCollapsed(false)
+      // Reset manual toggle tracking
+      userToggledColumn1.current = false
+      userToggledColumn2.current = false
+    } else if (isTablet) {
       // Only auto-adjust if user hasn't manually toggled
+      if (!userToggledColumn1.current) {
+        // Always collapse Column 1 in tablet mode (both portrait and landscape)
+        setIsColumn1Collapsed(true)
+      }
       if (!userToggledColumn2.current) {
+        // Collapse Column 2 only in portrait mode
         setIsColumn2Collapsed(isPortrait)
       }
+      // Collapse audio panel in tablet mode
+      setIsAudioPanelCollapsed(true)
     } else {
-      // Reset manual toggle tracking when leaving tablet mode
+      // Mobile mode: reset manual toggle tracking
+      userToggledColumn1.current = false
       userToggledColumn2.current = false
     }
-  }, [isTablet, isPortrait])
+  }, [isDesktop, isTablet, isPortrait])
 
   // Cleanup audio blob URLs when track changes/unmounts
   useEffect(() => {
@@ -709,6 +729,10 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
     const newState = !isColumn1Collapsed
     setIsColumn1Collapsed(newState)
     localStorage.setItem('column1Collapsed', String(newState))
+    // Mark that user manually toggled (for tablet auto-collapse)
+    if (isTablet) {
+      userToggledColumn1.current = true
+    }
   }
 
   const toggleColumn2 = () => {
