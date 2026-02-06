@@ -1,4 +1,5 @@
 import { useBreakpointValue } from '@chakra-ui/react'
+import { useState, useEffect } from 'react'
 
 export type DeviceType = 'mobile' | 'tablet' | 'desktop'
 
@@ -12,5 +13,31 @@ export const useResponsive = () => {
 
   const deviceType: DeviceType = isMobile ? 'mobile' : isTablet ? 'tablet' : 'desktop'
 
-  return { isMobile, isTablet, isDesktop, deviceType }
+  // Orientation detection
+  const [isPortrait, setIsPortrait] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return window.innerHeight > window.innerWidth
+  })
+
+  useEffect(() => {
+    const checkOrientation = () => {
+      setIsPortrait(window.innerHeight > window.innerWidth)
+    }
+
+    // Check on resize (covers orientation change)
+    window.addEventListener('resize', checkOrientation)
+
+    // Also listen to orientation change event for mobile devices
+    window.addEventListener('orientationchange', () => {
+      // Small delay to let the browser update dimensions
+      setTimeout(checkOrientation, 100)
+    })
+
+    return () => {
+      window.removeEventListener('resize', checkOrientation)
+      window.removeEventListener('orientationchange', checkOrientation)
+    }
+  }, [])
+
+  return { isMobile, isTablet, isDesktop, deviceType, isPortrait }
 }

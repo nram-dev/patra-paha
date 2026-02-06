@@ -1,6 +1,6 @@
-import { Box, IconButton, useToast, HStack, Text, Spinner, VStack, Menu, MenuButton, MenuList, MenuItem, Button, useColorMode, Input, Select, Drawer, DrawerOverlay, DrawerContent, DrawerCloseButton, DrawerHeader, DrawerBody, useDisclosure, useBreakpointValue } from '@chakra-ui/react'
-import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon, ExternalLinkIcon, CloseIcon, DeleteIcon } from '@chakra-ui/icons'
-import { useState, useEffect, useMemo } from 'react'
+import { Box, IconButton, useToast, HStack, Text, Spinner, VStack, Menu, MenuButton, MenuList, MenuItem, Button, useColorMode, Drawer, DrawerOverlay, DrawerContent, DrawerCloseButton, DrawerHeader, DrawerBody, useDisclosure, useBreakpointValue } from '@chakra-ui/react'
+import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon } from '@chakra-ui/icons'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { driveService } from '../services/driveService'
 import { db } from '../db/database'
@@ -71,6 +71,28 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
   const isTablet = layoutMode === 'tablet' ? true : layoutMode === 'desktop' ? false : autoIsTablet
   const isDesktop = layoutMode === 'desktop' ? true : layoutMode === 'tablet' ? false : autoIsDesktop
 
+  // Orientation detection for tablet portrait auto-collapse
+  const [isPortrait, setIsPortrait] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return window.innerHeight > window.innerWidth
+  })
+
+  useEffect(() => {
+    const checkOrientation = () => {
+      setIsPortrait(window.innerHeight > window.innerWidth)
+    }
+
+    window.addEventListener('resize', checkOrientation)
+    window.addEventListener('orientationchange', () => {
+      setTimeout(checkOrientation, 100)
+    })
+
+    return () => {
+      window.removeEventListener('resize', checkOrientation)
+      window.removeEventListener('orientationchange', checkOrientation)
+    }
+  }, [])
+
   // Mobile drawer for navigation
   const { isOpen: isDrawerOpen, onOpen: onDrawerOpen, onClose: onDrawerClose } = useDisclosure()
 
@@ -93,12 +115,12 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
   const [language, setLanguage] = useState<TitleLanguage>('english')
   const [isColumn1Collapsed, setIsColumn1Collapsed] = useState(false)
   const [isColumn2Collapsed, setIsColumn2Collapsed] = useState(false)
+  // Track if user manually toggled column 2 (to avoid overriding their preference)
+  const userToggledColumn2 = useRef(false)
   const [showEmptyCategories, setShowEmptyCategories] = useState(false)
   const [sortBy, setSortBy] = useState<SortOption>('alphabetical')
   const [externalUrl, setExternalUrl] = useState<string | null>(null)
   const [externalUrlTitle, setExternalUrlTitle] = useState<string | null>(null)
-  const [urlInput, setUrlInput] = useState('')
-  const [recentUrls, setRecentUrls] = useState<Array<{ title: string; url: string; lastUsed: string }>>([])
   const [docExternalUrl, setDocExternalUrl] = useState<string | null>(null)
   const [fontSize, setFontSize] = useState<'small' | 'medium' | 'large' | 'xlarge'>('medium')
 
@@ -142,7 +164,7 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
     }
   }, [collection, collectionId, navigate, toast])
 
-  // Clear Items panel when collection changes
+  // Clear Items panel and audio when collection changes
   useEffect(() => {
     setSongs([])
     setSelectedSong(null)
@@ -150,6 +172,9 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
     setShowingFavorites(false)
     setExternalUrl(null)
     setExternalUrlTitle(null)
+    // Clear audio state
+    setNowPlayingSong(null)
+    setAudioBlobUrl(null)
   }, [collectionId])
 
   // Load language preference from settings
@@ -225,19 +250,18 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
     setShowEmptyCategories(emptyCategories)
   }, [])
 
+  // Auto-collapse song list in tablet portrait mode
   useEffect(() => {
-    if (!collectionId) return
-    const stored = localStorage.getItem(`recentUrls:${collectionId}`)
-    if (!stored) return
-    try {
-      const parsed = JSON.parse(stored) as Array<{ title: string; url: string; lastUsed: string }>
-      if (Array.isArray(parsed)) {
-        setRecentUrls(parsed)
+    if (isTablet) {
+      // Only auto-adjust if user hasn't manually toggled
+      if (!userToggledColumn2.current) {
+        setIsColumn2Collapsed(isPortrait)
       }
-    } catch {
-      // Ignore malformed storage
+    } else {
+      // Reset manual toggle tracking when leaving tablet mode
+      userToggledColumn2.current = false
     }
-  }, [collectionId])
+  }, [isTablet, isPortrait])
 
   // Cleanup audio blob URLs when track changes/unmounts
   useEffect(() => {
@@ -277,6 +301,9 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
     setSelectedDeity(deity)
     setSelectedSong(null)
     setShowingFavorites(false)
+    // Clear audio state when category changes
+    setNowPlayingSong(null)
+    setAudioBlobUrl(null)
     
     try {
       if (collectionId) {
@@ -360,6 +387,9 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
     setShowingFavorites(true)
     setSelectedDeity(null)
     setSelectedSong(null)
+    // Clear audio state when switching to favorites
+    setNowPlayingSong(null)
+    setAudioBlobUrl(null)
     
     try {
       setLoading(true)
@@ -406,6 +436,9 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
     setExternalUrl(null)
     setExternalUrlTitle(null)
     setSelectedSong(song)
+    // Clear audio state when selecting a new document
+    setNowPlayingSong(null)
+    setAudioBlobUrl(null)
 
     const updatedViewData = await updateViewData(song)
 
@@ -679,59 +712,16 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
     const newState = !isColumn2Collapsed
     setIsColumn2Collapsed(newState)
     localStorage.setItem('column2Collapsed', String(newState))
+    // Mark that user manually toggled (for tablet portrait auto-collapse)
+    if (isTablet) {
+      userToggledColumn2.current = true
+    }
   }
 
   const toggleEmptyCategories = () => {
     const newState = !showEmptyCategories
     setShowEmptyCategories(newState)
     localStorage.setItem('showEmptyCategories', String(newState))
-  }
-
-  const normalizeUrlInput = (value: string) => {
-    const trimmed = value.trim()
-    if (!trimmed) return null
-    try {
-      return new URL(trimmed).toString()
-    } catch {
-      try {
-        return new URL(`https://${trimmed}`).toString()
-      } catch {
-        return null
-      }
-    }
-  }
-
-  const openExternalUrl = (value: string) => {
-    if (!collectionId) return
-    const normalized = normalizeUrlInput(value)
-    if (!normalized) {
-      toast({
-        title: 'Invalid URL',
-        description: 'Enter a valid URL to open in the viewer.',
-        status: 'warning',
-        duration: 3000,
-      })
-      return
-    }
-
-    const derivedTitle = (() => {
-      try {
-        return new URL(normalized).hostname
-      } catch {
-        return normalized
-      }
-    })()
-
-    const updated = [
-      { title: derivedTitle, url: normalized, lastUsed: new Date().toISOString() },
-      ...recentUrls.filter(entry => entry.url !== normalized),
-    ].slice(0, 10)
-
-    setRecentUrls(updated)
-    localStorage.setItem(`recentUrls:${collectionId}`, JSON.stringify(updated))
-    setExternalUrl(normalized)
-    setExternalUrlTitle(derivedTitle)
-    setSelectedSong(null)
   }
 
   if (!collection || !collectionConfig) {
@@ -1045,8 +1035,8 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
           </Box>
         ) : null}
 
-        {/* Toggle button for Column 2 - Desktop only */}
-        {isDesktop && (
+        {/* Toggle button for Column 2 - Desktop and Tablet */}
+        {(isDesktop || isTablet) && (
           <IconButton
             aria-label={isColumn2Collapsed ? 'Expand song list' : 'Collapse song list'}
             icon={isColumn2Collapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />}
@@ -1054,9 +1044,11 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
             size="sm"
             position="absolute"
             left={
-              isColumn1Collapsed
-                ? (isColumn2Collapsed ? '0px' : '280px')
-                : (isColumn2Collapsed ? '200px' : '480px')
+              isTablet
+                ? (isColumn2Collapsed ? '0px' : '240px')
+                : isColumn1Collapsed
+                  ? (isColumn2Collapsed ? '0px' : '280px')
+                  : (isColumn2Collapsed ? '200px' : '480px')
             }
             top="50%"
             transform="translateY(-50%)"
@@ -1111,6 +1103,8 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
                   hasPrev={nowPlayingSong ? audioQueue.findIndex(song => song.id === nowPlayingSong.id) > 0 : false}
                   hasNext={nowPlayingSong ? audioQueue.findIndex(song => song.id === nowPlayingSong.id) < audioQueue.length - 1 : false}
                   autoExternalUrl={autoExternalUrl}
+                  isDesktopOverride={isDesktop}
+                  resetKey={`${selectedDeity?.id}-${selectedSong?.id}`}
                 />
               </Box>
             )}
@@ -1130,6 +1124,8 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
               hasPrev={nowPlayingSong ? audioQueue.findIndex(song => song.id === nowPlayingSong.id) > 0 : false}
               hasNext={nowPlayingSong ? audioQueue.findIndex(song => song.id === nowPlayingSong.id) < audioQueue.length - 1 : false}
               autoExternalUrl={autoExternalUrl}
+              isDesktopOverride={false}
+              resetKey={`${selectedDeity?.id}-${selectedSong?.id}`}
             />
           </Box>
         )}

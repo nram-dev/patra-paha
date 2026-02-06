@@ -164,8 +164,8 @@ export default function Header({
                 </Tooltip>
               )}
 
-              {/* Collection dropdown for Tablet/Desktop - easy switching between collections */}
-              {(isTablet || isDesktop) && collections && collections.length > 1 ? (
+              {/* Collection dropdown for Desktop only - easy switching between collections */}
+              {isDesktop && collections && collections.length > 1 ? (
                 <Menu>
                   <MenuButton
                     as={Button}
@@ -203,8 +203,9 @@ export default function Header({
                 </Menu>
               ) : (
                 /* Collection icon and name - simple text when only one collection */
+                /* Hide collection name on tablet to save space */
                 <Text fontSize={{ base: 'md', md: 'lg' }} fontWeight="bold" noOfLines={1}>
-                  {collectionIcon} {!isMobile && collectionName}
+                  {collectionIcon} {isDesktop && collectionName}
                 </Text>
               )}
 
@@ -286,14 +287,17 @@ export default function Header({
                   isDisabled={fontSize === 'small'}
                 />
               </Tooltip>
-              <Text
-                fontSize="xs"
-                color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}
-                minW="50px"
-                textAlign="center"
-              >
-                {fontSize}
-              </Text>
+              {/* Hide font size label on tablet to save space */}
+              {isDesktop && (
+                <Text
+                  fontSize="xs"
+                  color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}
+                  minW="50px"
+                  textAlign="center"
+                >
+                  {fontSize}
+                </Text>
+              )}
               <Tooltip label="Increase font size" hasArrow>
                 <IconButton
                   aria-label="Increase font size"

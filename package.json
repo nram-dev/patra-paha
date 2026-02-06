@@ -1,6 +1,6 @@
 {
   "name": "ganamruta-thuli",
-  "version": "0.1.0",
+  "version": "2.5.22",
   "type": "module",
   "description": "GAnAmruta Thuli - Personal PWA for managing devotional song lyrics from Google Drive",
   "scripts": {

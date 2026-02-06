@@ -13,6 +13,10 @@ interface AudioPanelProps {
   hasPrev?: boolean
   hasNext?: boolean
   autoExternalUrl?: string | null
+  // Layout mode override (from parent) - when true, show text labels; when false, show icons only
+  isDesktopOverride?: boolean
+  // Reset trigger - when this changes, reset external URL state
+  resetKey?: string
 }
 
 export default function AudioPanel({
@@ -25,10 +29,17 @@ export default function AudioPanel({
   hasPrev,
   hasNext,
   autoExternalUrl,
+  isDesktopOverride,
+  resetKey,
 }: AudioPanelProps) {
   const { colorMode } = useColorMode()
-  const isMobile = useBreakpointValue({ base: true, md: false }) ?? false
-  const isDesktop = useBreakpointValue({ base: false, lg: true }) ?? false
+  const autoIsMobile = useBreakpointValue({ base: true, md: false }) ?? false
+  const autoIsDesktop = useBreakpointValue({ base: false, lg: true }) ?? false
+
+  // Use overrides if provided (for manual layout mode toggle)
+  const isMobile = autoIsMobile
+  const isDesktop = isDesktopOverride !== undefined ? isDesktopOverride : autoIsDesktop
+  const isTablet = !isMobile && !isDesktop
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const lastAudioSongIdRef = useRef<string | null>(null)
   const [playbackRate, setPlaybackRate] = useState(1)
@@ -81,6 +92,18 @@ export default function AudioPanel({
     setExternalLabel(null)
     setExternalError(null)
   }, [nowPlayingSong?.id])
+
+  // Reset external URL state when resetKey changes (category or item selection)
+  const prevResetKeyRef = useRef<string | undefined>(resetKey)
+  useEffect(() => {
+    if (prevResetKeyRef.current !== resetKey && prevResetKeyRef.current !== undefined) {
+      setExternalEmbedUrl(null)
+      setExternalLabel(null)
+      setExternalError(null)
+      setExternalUrlInput('')
+    }
+    prevResetKeyRef.current = resetKey
+  }, [resetKey])
 
   useEffect(() => {
     if (!externalEmbedUrl) return
@@ -223,7 +246,7 @@ export default function AudioPanel({
         flexWrap="wrap"
       >
         {/* Now Playing info - show at top on mobile */}
-        <Box flex="1" minW={{ base: 'auto', md: '200px' }} textAlign="center" order={{ base: -1, md: 0 }}>
+        <Box flex="1" minW={{ base: 'auto', md: '200px' }} textAlign="left" order={{ base: -1, md: 0 }}>
           <Text
             fontSize="sm"
             color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}
@@ -232,47 +255,49 @@ export default function AudioPanel({
             {externalEmbedUrl
               ? `Playing: ${externalLabel ?? 'External URL'}`
               : nowPlayingSong
-              ? `Playing: ${nowPlayingSong.name}`
+              ? nowPlayingSong.name
               : 'Select audio to play'}
           </Text>
         </Box>
 
-        {/* URL input - full width on mobile */}
-        <HStack spacing={2} flex={{ base: 'auto', md: '1' }} minW={{ base: 'auto', md: '280px' }} justify="flex-start">
-          <Text fontSize="xs" color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}>
-            URL:
-          </Text>
-          <Input
-            size="xs"
-            value={externalUrlInput}
-            onChange={(event) => setExternalUrlInput(event.target.value)}
-            placeholder="Paste YouTube or Spotify URL"
-            flex="1"
-            maxW={{ base: 'none', md: '260px' }}
-            list="recent-external-urls"
-          />
-          <Box as="datalist" id="recent-external-urls">
-            {recentUrls.map((url) => (
-              <option key={url} value={url} />
-            ))}
-          </Box>
-          <IconButton
-            aria-label="Play URL"
-            size="xs"
-            icon={<ChevronRightIcon />}
-            onClick={handleExternalPlay}
-            isDisabled={!externalUrlInput.trim()}
-          />
-          {(externalEmbedUrl || externalUrlInput.trim()) && (
-            <IconButton
-              aria-label="Clear URL"
+        {/* URL input - hide on tablet unless external URL is playing */}
+        {(!isTablet || externalEmbedUrl) && (
+          <HStack spacing={2} flex={{ base: 'auto', md: '1' }} minW={{ base: 'auto', md: '280px' }} justify="flex-start">
+            <Text fontSize="xs" color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}>
+              URL:
+            </Text>
+            <Input
               size="xs"
-              variant="outline"
-              icon={<CloseIcon />}
-              onClick={handleExternalClear}
+              value={externalUrlInput}
+              onChange={(event) => setExternalUrlInput(event.target.value)}
+              placeholder="Paste YouTube or Spotify URL"
+              flex="1"
+              maxW={{ base: 'none', md: '260px' }}
+              list="recent-external-urls"
             />
-          )}
-        </HStack>
+            <Box as="datalist" id="recent-external-urls">
+              {recentUrls.map((url) => (
+                <option key={url} value={url} />
+              ))}
+            </Box>
+            <IconButton
+              aria-label="Play URL"
+              size="xs"
+              icon={<ChevronRightIcon />}
+              onClick={handleExternalPlay}
+              isDisabled={!externalUrlInput.trim()}
+            />
+            {(externalEmbedUrl || externalUrlInput.trim()) && (
+              <IconButton
+                aria-label="Clear URL"
+                size="xs"
+                variant="outline"
+                icon={<CloseIcon />}
+                onClick={handleExternalClear}
+              />
+            )}
+          </HStack>
+        )}
 
         {/* Navigation and controls */}
         <HStack spacing={2} flex={{ base: 'auto', md: '1' }} minW={{ base: 'auto', md: '280px' }} justify={{ base: 'center', md: 'flex-end' }}>

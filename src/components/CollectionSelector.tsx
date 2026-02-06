@@ -414,7 +414,9 @@ export const CollectionSelector = ({ onLogout }: CollectionSelectorProps) => {
 
         {/* Footer Note */}
         <Box textAlign="center" pt={8} pb={4}>
-
+          <Text fontSize="sm" color="gray.400" fontWeight="normal">
+            Version 2.5.22
+          </Text>
         </Box>
       </VStack>
 

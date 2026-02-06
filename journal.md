@@ -1,3 +1,17 @@
+## 2026-02-06
+
+- **Tablet Portrait Mode Optimization**: Auto-collapse song list when tablet is in portrait orientation to give more space to the document viewer. User can manually expand if needed.
+- **Tablet UI Cleanup**: Removed collection dropdown and name from header in tablet mode to save space. Only collection icon is shown.
+- **Tablet Audio Panel**: Replaced text labels with icons (Play/Pause, Replay, Prev/Next, Skip) in tablet mode. Hidden URL input unless external URL is playing.
+- **Audio Panel Reset**: Audio now properly resets when changing collection, category, or selecting a new document.
+- **Audio Panel Display**: Removed "Playing:" prefix for local audio files, showing just the filename left-justified.
+- **Font Size Label**: Hidden font size label (e.g., "medium") in tablet mode, keeping only A-/A+ buttons.
+- Updated version to 2.5.22.
+
+### Previous (2026-02-06)
+- Added version info "Version 2.5.20" to the landing page footer with subtle styling.
+- Cleaned up unused imports and code in CollectionView (Input, Select, ExternalLinkIcon, CloseIcon, DeleteIcon, urlInput state, recentUrls state, normalizeUrlInput, openExternalUrl).
+
 ## 2026-02-05
 
 - Moved font size controls (A-/A+) from document panel to header bar for better accessibility and cleaner document view.
