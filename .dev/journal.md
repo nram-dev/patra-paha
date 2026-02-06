@@ -1,5 +1,171 @@
 # Development Journal
 
+## 2026-02-06: Fix Mobile Bottom Tab Bar Visibility
+
+### Bug Fix
+The bottom tab bar (Items/Viewer/Audio) was intermittently disappearing on actual mobile devices, especially after selecting a new category. The issue was unreliable `position: sticky` behavior on mobile browsers.
+
+### Root Cause
+Using `position: sticky` for the bottom tab bar can be unreliable on mobile devices due to:
+- Parent container overflow/transform properties affecting sticky positioning
+- Safari and mobile Chrome quirks with sticky elements
+- Content reflows during category selection causing layout shifts
+
+### Solution
+Changed from `position: sticky` to `position: fixed` for guaranteed visibility, with proper safe area handling for devices with home indicators.
+
+### Changes Made
+
+#### 1. Fixed Position Bottom Tab Bar
+**File:** `src/components/CollectionView.tsx`
+- Changed `position="sticky"` to `position="fixed"` for reliable anchoring
+- Added `left={0}` and `right={0}` to ensure full-width coverage
+- Increased `zIndex` from 10 to 1000 to prevent overlapping issues
+- Added `pb="calc(env(safe-area-inset-bottom, 0px) + 8px)"` for iPhone notch/home indicator
+
+#### 2. Content Bottom Padding
+**File:** `src/components/CollectionView.tsx`
+- Added `pb={isMobile ? 'calc(60px + env(safe-area-inset-bottom, 0px))' : 0}` to main content area
+- Prevents content from being hidden behind the fixed bottom bar
+
+### Files Modified
+- `src/components/CollectionView.tsx` - Fixed positioning, z-index, safe area padding
+
+---
+
+## 2026-02-06: Main Screen Menu Redesign and Theme Support
+
+### Feature
+Added About modal, theme toggle, and reorganized the main screen header menu with full dark/light theme support.
+
+### Changes Made
+
+#### 1. About Modal
+**File:** `src/components/CollectionSelector.tsx`
+- Added About modal with product information:
+  - Product name: PatraPaha (पत्रपहा)
+  - Description: Integrated personal document viewer and media player
+  - Etymology: Patra (Document in Tamil) + PahA (Viewer in Marathi)
+  - Version info
+  - Developer: Edge2.Cloud
+  - Support email: support@edge2.cloud (clickable mailto link)
+  - Feature highlights list
+
+#### 2. Theme Toggle
+**File:** `src/components/CollectionSelector.tsx`
+- Added sun/moon icon button to toggle between light and dark themes
+- Uses Chakra UI's `useColorMode` hook for theme management
+- Theme state syncs with CollectionView (shared via Chakra context)
+
+#### 3. Header Button Reorganization
+**File:** `src/components/CollectionSelector.tsx`
+- New button order: About | Theme | Settings | Sign Out
+- Removed button borders (changed from `variant="outline"` to `variant="ghost"`)
+- Mobile/Tablet: Icon-only buttons for compact layout
+- Desktop: Full text labels with icons
+
+#### 4. Full Theme Support
+**File:** `src/components/CollectionSelector.tsx`
+- Updated all colors to be theme-aware:
+  - Background: `dark.background` / `calm.background`
+  - Text: `dark.textPrimary` / `calm.textPrimary`
+  - Secondary text: `dark.textSecondary` / `calm.textSecondary`
+  - Borders: `dark.border` / `gray.300`
+  - Cards: `dark.surface` / appropriate light colors
+
+#### 5. Sync Empty Collections Toggle
+**File:** `src/components/CollectionView.tsx`
+- Changed localStorage key from `showEmptyCategories` to `showEmptyCollections`
+- Main screen and collection view now share the same toggle setting
+
+#### 6. Responsive Breakpoint Fix
+**File:** `src/components/CollectionSelector.tsx`
+- Changed breakpoint from `md` to `lg` for mobile/tablet detection
+- Tablets now use the compact header layout (was showing desktop layout)
+
+### Header Layout Summary
+
+| Layout | About | Theme | Settings | Sign Out |
+|--------|-------|-------|----------|----------|
+| Mobile/Tablet | Icon | Icon | Icon menu | Icon |
+| Desktop | Button with text | Icon | Dropdown with text | Button with text |
+
+### Files Modified
+- `src/components/CollectionSelector.tsx` - About modal, theme toggle, header redesign
+- `src/components/CollectionView.tsx` - Sync localStorage key for empty collections
+
+---
+
+## 2026-02-06: Enhanced Panel Collapse Controls
+
+### Feature
+Made panel collapse controls more prominent and added smart auto-collapse behavior based on layout mode.
+
+### Changes Made
+
+#### 1. Prominent Collapse Buttons
+**File:** `src/components/CollectionView.tsx`
+- Changed from subtle, low-opacity buttons to bright orange circular buttons
+- Increased button size from `sm` to `md` with larger icons (`boxSize={5}`)
+- Added `borderRadius="full"` and `boxShadow="md"` for visibility
+- Removed `opacity: 0.7` that made buttons hard to see
+
+#### 2. Audio Panel Collapse Toggle
+**File:** `src/components/CollectionView.tsx`
+- Added collapsible audio panel with centered toggle button at top
+- When collapsed, shows slim 36px bar with current track name
+- State persisted to localStorage (`audioPanelCollapsed`)
+
+#### 3. Smart Auto-Collapse by Layout Mode
+**File:** `src/components/CollectionView.tsx`
+- **Desktop**: Automatically expand all panels (Categories, Items, Audio)
+- **Tablet Landscape**: Collapse Categories panel, keep Items expanded, collapse Audio
+- **Tablet Portrait**: Collapse both Categories and Items panels, collapse Audio
+- Added `userToggledColumn1` ref to track manual toggles
+- User preferences respected in tablet mode until layout mode changes
+
+#### 4. Categories Panel in Tablet Landscape
+**File:** `src/components/CollectionView.tsx`
+- Categories panel (Column 1) now available in tablet landscape mode
+- Previously only shown in desktop mode
+
+### Layout Behavior Summary
+
+| Layout Mode | Categories (Col 1) | Items (Col 2) | Audio Panel |
+|-------------|-------------------|---------------|-------------|
+| Desktop | Expanded | Expanded | Expanded |
+| Tablet Landscape | Collapsed | Expanded | Collapsed |
+| Tablet Portrait | Collapsed | Collapsed | Collapsed |
+
+### Files Modified
+- `src/components/CollectionView.tsx` - Collapse controls, auto-collapse logic, audio panel toggle
+
+---
+
+## 2026-02-06: Remove URL Input from Items Panel
+
+### Change
+Removed the URL input section from the Items panel (column 2) to simplify the interface.
+
+### Removed UI Elements
+- URL text input field
+- Open URL button (external link icon)
+- Clear URL button
+- Recent URLs dropdown
+- Delete recent URLs button
+
+### Files Modified
+- `src/components/CollectionView.tsx` - Removed URL input Box component (lines 869-950)
+
+### Notes
+- The external URL viewer functionality in SongViewer remains intact
+- Document links section (YouTube/Spotify) still displays and works
+- Removed unused imports: `Input`, `Select`, `ExternalLinkIcon`, `CloseIcon`, `DeleteIcon`
+- Removed unused state: `urlInput`, `recentUrls`
+- Removed unused functions: `normalizeUrlInput`, `openExternalUrl`
+
+---
+
 ## 2026-02-05: Add Collections Dropdown to Header
 
 ### Feature

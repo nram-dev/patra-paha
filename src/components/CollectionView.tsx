@@ -809,7 +809,13 @@ export const CollectionView = () => {
         </DrawerContent>
       </Drawer>
 
-      <Box flex="1" display="flex" overflow="hidden" position="relative">
+      <Box
+        flex="1"
+        display="flex"
+        overflow="hidden"
+        position="relative"
+        pb={isMobile ? 'calc(60px + env(safe-area-inset-bottom, 0px))' : 0}
+      >
         {/* Column 1: Navigation - Desktop and Tablet Landscape */}
         {(isDesktop || (isTablet && !isPortrait)) && !isColumn1Collapsed && (
           <Navigation
@@ -1202,7 +1208,7 @@ export const CollectionView = () => {
         )}
       </Box>
 
-      {/* Mobile Bottom Tab Bar */}
+      {/* Mobile Bottom Tab Bar - Fixed position to always show */}
       {isMobile && (
         <HStack
           bg={colorMode === 'dark' ? 'dark.surface' : 'calm.surface'}
@@ -1210,10 +1216,13 @@ export const CollectionView = () => {
           borderColor={colorMode === 'dark' ? 'dark.border' : 'calm.border'}
           px={2}
           py={2}
+          pb="calc(env(safe-area-inset-bottom, 0px) + 8px)"
           justify="space-around"
-          position="sticky"
+          position="fixed"
           bottom={0}
-          zIndex={10}
+          left={0}
+          right={0}
+          zIndex={1000}
         >
           <Button
             variant={activeMobilePanel === 'songs' ? 'solid' : 'ghost'}
