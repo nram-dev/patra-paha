@@ -1,9 +1,9 @@
 import {
-  Box, Heading, Text, SimpleGrid, Card, CardBody, VStack, HStack, Icon, IconButton, Spinner, Tooltip, Button, Menu, MenuButton, MenuList, MenuItem, MenuDivider,
+  Box, Heading, Text, SimpleGrid, Card, CardBody, VStack, HStack, Icon, IconButton, Spinner, Tooltip, Button, Menu, MenuButton, MenuList, MenuItem,
   Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalFooter, ModalCloseButton,
-  FormControl, FormLabel, Input, Popover, PopoverTrigger, PopoverContent, PopoverBody, Wrap, WrapItem, Flex, useToast, useBreakpointValue, Link
+  FormControl, FormLabel, Input, Popover, PopoverTrigger, PopoverContent, PopoverBody, Wrap, WrapItem, Flex, useToast, useBreakpointValue, Link, useColorMode
 } from '@chakra-ui/react'
-import { AddIcon, RepeatIcon, DeleteIcon, SettingsIcon, ChevronDownIcon, CheckIcon, EditIcon, InfoIcon, ExternalLinkIcon, LockIcon } from '@chakra-ui/icons'
+import { AddIcon, RepeatIcon, DeleteIcon, SettingsIcon, ChevronDownIcon, CheckIcon, EditIcon, InfoIcon, ExternalLinkIcon, LockIcon, MoonIcon, SunIcon } from '@chakra-ui/icons'
 import { useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { useCollectionStore } from '../stores/collectionStore'
@@ -18,12 +18,13 @@ type CollectionSelectorProps = {
 export const CollectionSelector = ({ onLogout }: CollectionSelectorProps) => {
   const navigate = useNavigate()
   const toast = useToast()
+  const { colorMode, toggleColorMode } = useColorMode()
   const { collections, documentCounts, loadCollections, deleteCollection, updateCollection, scanErrors, setScanError, clearScanError, refreshDocumentCounts } = useCollectionStore()
   const [scanning, setScanning] = useState<Record<string, boolean>>({})
   const [deleting, setDeleting] = useState<Record<string, boolean>>({})
 
-  // Responsive
-  const isMobile = useBreakpointValue({ base: true, md: false }) ?? false
+  // Responsive - use compact layout for mobile and tablet
+  const isMobile = useBreakpointValue({ base: true, lg: false }) ?? false
   const [showEmptyCollections, setShowEmptyCollections] = useState(() => {
     return localStorage.getItem('showEmptyCollections') === 'true'
   })
@@ -130,66 +131,79 @@ export const CollectionSelector = ({ onLogout }: CollectionSelectorProps) => {
     : collections.filter(c => (documentCounts[c.id] || 0) > 0)
 
   return (
-    <Box p={{ base: 4, md: 8 }} bg="calm.background" minH="100vh">
+    <Box p={{ base: 4, md: 8 }} bg={colorMode === 'dark' ? 'dark.background' : 'calm.background'} minH="100vh">
       <VStack spacing={{ base: 4, md: 8 }} align="stretch" maxW="1200px" mx="auto">
         {/* Header - compact on mobile */}
         <Box textAlign="center" position="relative">
           {isMobile ? (
-            /* Mobile compact header */
+            /* Mobile/Tablet compact header */
             <HStack justify="space-between" align="center">
               <HStack spacing={2}>
                 <Text fontSize="2xl">📄</Text>
                 <VStack align="start" spacing={0}>
-                  <Heading size="md" color="calm.textPrimary">PatraPaha</Heading>
-                  <Text fontSize="xs" color="calm.textSecondary">पत्रपहा</Text>
+                  <Heading size="md" color={colorMode === 'dark' ? 'dark.textPrimary' : 'calm.textPrimary'}>PatraPaha</Heading>
+                  <Text fontSize="xs" color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}>पत्रपहा</Text>
                 </VStack>
               </HStack>
               <HStack spacing={1}>
+                {/* About */}
+                <IconButton
+                  aria-label="About"
+                  icon={<InfoIcon />}
+                  onClick={() => setShowAboutModal(true)}
+                  size="sm"
+                  variant="ghost"
+                />
+                {/* Theme toggle */}
+                <IconButton
+                  aria-label="Toggle theme"
+                  icon={colorMode === 'dark' ? <SunIcon /> : <MoonIcon />}
+                  onClick={toggleColorMode}
+                  size="sm"
+                  variant="ghost"
+                />
+                {/* Settings Menu */}
                 <Menu>
                   <MenuButton
                     as={IconButton}
-                    aria-label="Menu"
+                    aria-label="Settings"
                     icon={<SettingsIcon />}
                     size="sm"
                     variant="ghost"
                   />
                   <MenuList>
-                    {/* About */}
-                    <MenuItem
-                      onClick={() => setShowAboutModal(true)}
-                      icon={<InfoIcon />}
-                    >
-                      About
-                    </MenuItem>
-                    <MenuDivider />
-                    {/* Settings */}
                     <MenuItem
                       onClick={toggleEmptyCollections}
                       icon={showEmptyCollections ? <CheckIcon /> : undefined}
                     >
                       View empty collections and categories
                     </MenuItem>
-                    <MenuDivider />
-                    {/* Login */}
-                    <MenuItem onClick={onLogout}>Sign Out</MenuItem>
                   </MenuList>
                 </Menu>
+                {/* Sign Out */}
+                <IconButton
+                  aria-label="Sign Out"
+                  icon={<LockIcon />}
+                  onClick={onLogout}
+                  size="sm"
+                  variant="ghost"
+                />
               </HStack>
             </HStack>
           ) : (
             /* Desktop header */
             <>
               <Box fontSize="5xl" mb={2}>📄</Box>
-              <Heading size="2xl" mb={2} color="calm.textPrimary">
+              <Heading size="2xl" mb={2} color={colorMode === 'dark' ? 'dark.textPrimary' : 'calm.textPrimary'}>
                 PatraPaha
               </Heading>
-              <Text fontSize="xl" color="calm.textSecondary" mb={1}>
+              <Text fontSize="xl" color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'} mb={1}>
                 पत्रपहा
               </Text>
-              <Text fontSize="md" color="calm.textSecondary">
+              <Text fontSize="md" color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}>
                 Integrated personal document viewer and media player.
               </Text>
-              {/* Actions: About | Settings | Login */}
+              {/* Actions: About | Theme | Settings | Sign Out */}
               <HStack position="absolute" top={0} right={0} spacing={2}>
                 {/* About */}
                 <Button
@@ -200,6 +214,14 @@ export const CollectionSelector = ({ onLogout }: CollectionSelectorProps) => {
                 >
                   About
                 </Button>
+                {/* Theme toggle */}
+                <IconButton
+                  aria-label="Toggle theme"
+                  icon={colorMode === 'dark' ? <SunIcon /> : <MoonIcon />}
+                  onClick={toggleColorMode}
+                  size="sm"
+                  variant="ghost"
+                />
                 {/* Settings Menu */}
                 <Menu>
                   <MenuButton
@@ -220,7 +242,7 @@ export const CollectionSelector = ({ onLogout }: CollectionSelectorProps) => {
                     </MenuItem>
                   </MenuList>
                 </Menu>
-                {/* Login/Sign Out */}
+                {/* Sign Out */}
                 <Button
                   size="sm"
                   variant="ghost"
@@ -237,7 +259,7 @@ export const CollectionSelector = ({ onLogout }: CollectionSelectorProps) => {
         {/* Collections Grid */}
         {collections.length > 0 && (
           <Box>
-            <Heading size="md" mb={4} color="calm.textPrimary">
+            <Heading size="md" mb={4} color={colorMode === 'dark' ? 'dark.textPrimary' : 'calm.textPrimary'}>
               Your Collections
             </Heading>
             <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
@@ -264,7 +286,7 @@ export const CollectionSelector = ({ onLogout }: CollectionSelectorProps) => {
                         <HStack justify="space-between" align="center">
                           <HStack spacing={2} flex="1" minW="0">
                             <Text fontSize="xl">{collection.icon}</Text>
-                            <Text fontWeight="semibold" color="calm.textPrimary" noOfLines={1} flex="1">
+                            <Text fontWeight="semibold" color={colorMode === 'dark' ? 'dark.textPrimary' : 'calm.textPrimary'} noOfLines={1} flex="1">
                               {collection.name}
                             </Text>
                           </HStack>
@@ -312,7 +334,7 @@ export const CollectionSelector = ({ onLogout }: CollectionSelectorProps) => {
                       /* Desktop: Original layout */
                       <VStack align="start" spacing={3}>
                         <Box fontSize="4xl">{collection.icon}</Box>
-                        <Heading size="md" color="calm.textPrimary">
+                        <Heading size="md" color={colorMode === 'dark' ? 'dark.textPrimary' : 'calm.textPrimary'}>
                           {collection.name}
                         </Heading>
                         {(collection.nameDevanagari || collection.nameTamil) && (
@@ -383,26 +405,26 @@ export const CollectionSelector = ({ onLogout }: CollectionSelectorProps) => {
                 onClick={() => navigate('/add-collection')}
                 borderStyle="dashed"
                 borderWidth={2}
-                borderColor="gray.300"
-                bg="gray.50"
+                borderColor={colorMode === 'dark' ? 'dark.border' : 'gray.300'}
+                bg={colorMode === 'dark' ? 'dark.surface' : 'gray.50'}
                 _hover={{
-                  borderColor: 'calm.accent',
-                  bg: 'gray.100'
+                  borderColor: colorMode === 'dark' ? 'dark.accent' : 'calm.accent',
+                  bg: colorMode === 'dark' ? 'dark.panelSecondary' : 'gray.100'
                 }}
                 transition="all 0.2s"
               >
                 <CardBody py={{ base: 2, md: 4 }} px={{ base: 3, md: 4 }}>
                   {isMobile ? (
                     <HStack justify="center" spacing={2}>
-                      <Icon as={AddIcon} fontSize="md" color="gray.400" />
-                      <Text color="gray.600" fontWeight="medium" fontSize="sm">
+                      <Icon as={AddIcon} fontSize="md" color={colorMode === 'dark' ? 'dark.textSecondary' : 'gray.400'} />
+                      <Text color={colorMode === 'dark' ? 'dark.textSecondary' : 'gray.600'} fontWeight="medium" fontSize="sm">
                         Add Collection
                       </Text>
                     </HStack>
                   ) : (
                     <VStack justify="center" h="full" spacing={3}>
-                      <Icon as={AddIcon} fontSize="2xl" color="gray.400" />
-                      <Text color="gray.600" fontWeight="medium">
+                      <Icon as={AddIcon} fontSize="2xl" color={colorMode === 'dark' ? 'dark.textSecondary' : 'gray.400'} />
+                      <Text color={colorMode === 'dark' ? 'dark.textSecondary' : 'gray.600'} fontWeight="medium">
                         Add Collection
                       </Text>
                     </VStack>
@@ -417,10 +439,10 @@ export const CollectionSelector = ({ onLogout }: CollectionSelectorProps) => {
         {collections.length === 0 && (
           <Box textAlign="center" py={12}>
             <Box fontSize="6xl" mb={4}>📚</Box>
-            <Heading size="lg" mb={3} color="calm.textPrimary">
+            <Heading size="lg" mb={3} color={colorMode === 'dark' ? 'dark.textPrimary' : 'calm.textPrimary'}>
               Welcome to PatraPaha!
             </Heading>
-            <Text color="calm.textSecondary" mb={6}>
+            <Text color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'} mb={6}>
               Get started by adding your first collection
             </Text>
             <Button
@@ -437,7 +459,7 @@ export const CollectionSelector = ({ onLogout }: CollectionSelectorProps) => {
         {/* Footer Note */}
         <Box textAlign="center" pt={8} pb={4}>
           <Text fontSize="sm" color="gray.400" fontWeight="normal">
-            Version 2.5.30 - © 2026 Edge2.Cloud
+            Version 2.5.39 © 2026 Edge2.Cloud
           </Text>
         </Box>
       </VStack>
