@@ -247,7 +247,7 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
     const col1Collapsed = localStorage.getItem('column1Collapsed') === 'true'
     const col2Collapsed = localStorage.getItem('column2Collapsed') === 'true'
     const audioPanelCollapsed = localStorage.getItem('audioPanelCollapsed') === 'true'
-    const emptyCategories = localStorage.getItem('showEmptyCategories') === 'true'
+    const emptyCategories = localStorage.getItem('showEmptyCollections') === 'true'
     setIsColumn1Collapsed(col1Collapsed)
     setIsColumn2Collapsed(col2Collapsed)
     setIsAudioPanelCollapsed(audioPanelCollapsed)
@@ -748,7 +748,7 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
   const toggleEmptyCategories = () => {
     const newState = !showEmptyCategories
     setShowEmptyCategories(newState)
-    localStorage.setItem('showEmptyCategories', String(newState))
+    localStorage.setItem('showEmptyCollections', String(newState))
   }
 
   const toggleAudioPanel = () => {

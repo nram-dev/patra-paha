@@ -1,9 +1,9 @@
 import {
-  Box, Heading, Text, SimpleGrid, Card, CardBody, VStack, HStack, Icon, IconButton, Spinner, Tooltip, Button, Menu, MenuButton, MenuList, MenuItem,
+  Box, Heading, Text, SimpleGrid, Card, CardBody, VStack, HStack, Icon, IconButton, Spinner, Tooltip, Button, Menu, MenuButton, MenuList, MenuItem, MenuDivider,
   Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalFooter, ModalCloseButton,
-  FormControl, FormLabel, Input, Popover, PopoverTrigger, PopoverContent, PopoverBody, Wrap, WrapItem, Flex, useToast, useBreakpointValue
+  FormControl, FormLabel, Input, Popover, PopoverTrigger, PopoverContent, PopoverBody, Wrap, WrapItem, Flex, useToast, useBreakpointValue, Link
 } from '@chakra-ui/react'
-import { AddIcon, RepeatIcon, DeleteIcon, ViewIcon, ChevronDownIcon, CheckIcon, EditIcon } from '@chakra-ui/icons'
+import { AddIcon, RepeatIcon, DeleteIcon, SettingsIcon, ChevronDownIcon, CheckIcon, EditIcon, InfoIcon, ExternalLinkIcon, LockIcon } from '@chakra-ui/icons'
 import { useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { useCollectionStore } from '../stores/collectionStore'
@@ -34,6 +34,9 @@ export const CollectionSelector = ({ onLogout }: CollectionSelectorProps) => {
   const [editIcon, setEditIcon] = useState('')
   const [editColor, setEditColor] = useState({ name: '', color: '', accent: '' })
   const [saving, setSaving] = useState(false)
+
+  // About modal state
+  const [showAboutModal, setShowAboutModal] = useState(false)
 
   useEffect(() => {
     loadCollections()
@@ -145,18 +148,29 @@ export const CollectionSelector = ({ onLogout }: CollectionSelectorProps) => {
                 <Menu>
                   <MenuButton
                     as={IconButton}
-                    aria-label="View options"
-                    icon={<ViewIcon />}
+                    aria-label="Menu"
+                    icon={<SettingsIcon />}
                     size="sm"
                     variant="ghost"
                   />
                   <MenuList>
+                    {/* About */}
+                    <MenuItem
+                      onClick={() => setShowAboutModal(true)}
+                      icon={<InfoIcon />}
+                    >
+                      About
+                    </MenuItem>
+                    <MenuDivider />
+                    {/* Settings */}
                     <MenuItem
                       onClick={toggleEmptyCollections}
                       icon={showEmptyCollections ? <CheckIcon /> : undefined}
                     >
-                      Empty Collections
+                      View empty collections and categories
                     </MenuItem>
+                    <MenuDivider />
+                    {/* Login */}
                     <MenuItem onClick={onLogout}>Sign Out</MenuItem>
                   </MenuList>
                 </Menu>
@@ -173,40 +187,48 @@ export const CollectionSelector = ({ onLogout }: CollectionSelectorProps) => {
                 पत्रपहा
               </Text>
               <Text fontSize="md" color="calm.textSecondary">
-                View Your Documents
+                Integrated personal document viewer and media player.
               </Text>
-              {/* Actions (Sign Out + View Menu) */}
+              {/* Actions: About | Settings | Login */}
               <HStack position="absolute" top={0} right={0} spacing={2}>
-                <Text
-                  as="button"
-                  onClick={onLogout}
-                  fontSize="sm"
-                  color="calm.textSecondary"
-                  _hover={{ color: 'calm.textPrimary' }}
+                {/* About */}
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  leftIcon={<InfoIcon />}
+                  onClick={() => setShowAboutModal(true)}
                 >
-                  Sign Out
-                </Text>
+                  About
+                </Button>
+                {/* Settings Menu */}
                 <Menu>
                   <MenuButton
                     as={Button}
                     size="sm"
                     variant="ghost"
-                    leftIcon={<ViewIcon />}
+                    leftIcon={<SettingsIcon />}
                     rightIcon={<ChevronDownIcon />}
                   >
-                    View
+                    Settings
                   </MenuButton>
                   <MenuList>
                     <MenuItem
                       onClick={toggleEmptyCollections}
                       icon={showEmptyCollections ? <CheckIcon /> : undefined}
                     >
-                      <HStack justify="space-between" w="full">
-                        <Text>Empty Collections</Text>
-                      </HStack>
+                      View empty collections and categories
                     </MenuItem>
                   </MenuList>
                 </Menu>
+                {/* Login/Sign Out */}
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  leftIcon={<LockIcon />}
+                  onClick={onLogout}
+                >
+                  Sign Out
+                </Button>
               </HStack>
             </>
           )}
@@ -415,7 +437,7 @@ export const CollectionSelector = ({ onLogout }: CollectionSelectorProps) => {
         {/* Footer Note */}
         <Box textAlign="center" pt={8} pb={4}>
           <Text fontSize="sm" color="gray.400" fontWeight="normal">
-            Version 2.5.22
+            Version 2.5.30 - © 2026 Edge2.Cloud
           </Text>
         </Box>
       </VStack>
@@ -547,6 +569,89 @@ export const CollectionSelector = ({ onLogout }: CollectionSelectorProps) => {
               isDisabled={!editName.trim()}
             >
               Save
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* About Modal */}
+      <Modal isOpen={showAboutModal} onClose={() => setShowAboutModal(false)} isCentered size="md">
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>
+            <HStack spacing={3}>
+              <Text fontSize="2xl">📄</Text>
+              <VStack align="start" spacing={0}>
+                <Text>PatraPaha</Text>
+                <Text fontSize="sm" fontWeight="normal" color="gray.500">पत्रपहा</Text>
+              </VStack>
+            </HStack>
+          </ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <VStack spacing={4} align="stretch">
+              {/* Description */}
+              <Box>
+                <Text fontWeight="semibold" mb={1}>About</Text>
+                <Text fontSize="sm" color="gray.600">
+                  PatraPaha is an integrated personal document viewer and media player.
+                  It helps you organize and view your document collections from Google Drive
+                  with support for PDFs, images, and audio files.
+                  (Patra : Document in Tamil + PahA : Viewer in Marathi)
+                </Text>
+              </Box>
+
+              {/* Version */}
+              <Box>
+                <Text fontWeight="semibold" mb={1}>Version</Text>
+                <Text fontSize="sm" color="gray.600">2.5.28</Text>
+              </Box>
+
+              {/* Developer Info */}
+              <Box>
+                <Text fontWeight="semibold" mb={1}>Developed by</Text>
+                <Text fontSize="sm" color="gray.600">
+                  Edge2.Cloud
+                </Text>
+                <Text fontSize="sm" color="gray.500">
+                  
+                </Text>
+              </Box>
+
+              {/* Support */}
+              <Box>
+                <Text fontWeight="semibold" mb={1}>Support</Text>
+                <Text fontSize="sm" color="gray.600">
+                  For questions, issues, or feature requests, please contact:
+                </Text>
+                <Link
+                  href="mailto:support@edge2.cloud"
+                  color="blue.500"
+                  fontSize="sm"
+                  display="inline-flex"
+                  alignItems="center"
+                  gap={1}
+                >
+                  support@edge2.cloud <ExternalLinkIcon boxSize={3} />
+                </Link>
+              </Box>
+
+              {/* Additional Info */}
+              <Box>
+                <Text fontWeight="semibold" mb={1}>Features</Text>
+                <VStack align="start" spacing={1} fontSize="sm" color="gray.600">
+                  <Text>• Google Drive integration for document storage</Text>
+                  <Text>• Support for PDFs, images, and audio files</Text>
+                  <Text>• Organize documents into custom collections</Text>
+                  <Text>• Offline caching with IndexedDB</Text>
+                  <Text>• Responsive design for desktop and mobile</Text>
+                </VStack>
+              </Box>
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <Button colorScheme="blue" onClick={() => setShowAboutModal(false)}>
+              Close
             </Button>
           </ModalFooter>
         </ModalContent>
