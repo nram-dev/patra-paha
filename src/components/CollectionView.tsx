@@ -1,5 +1,5 @@
 import { Box, IconButton, useToast, HStack, Text, Spinner, VStack, Menu, MenuButton, MenuList, MenuItem, Button, useColorMode, Drawer, DrawerOverlay, DrawerContent, DrawerCloseButton, DrawerHeader, DrawerBody, useDisclosure, useBreakpointValue } from '@chakra-ui/react'
-import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon } from '@chakra-ui/icons'
+import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon, ChevronUpIcon } from '@chakra-ui/icons'
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { driveService } from '../services/driveService'
@@ -123,6 +123,7 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
   const [externalUrlTitle, setExternalUrlTitle] = useState<string | null>(null)
   const [docExternalUrl, setDocExternalUrl] = useState<string | null>(null)
   const [fontSize, setFontSize] = useState<'small' | 'medium' | 'large' | 'xlarge'>('medium')
+  const [isAudioPanelCollapsed, setIsAudioPanelCollapsed] = useState(false)
 
   useEffect(() => {
     setDocExternalUrl(null)
@@ -244,9 +245,11 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
   useEffect(() => {
     const col1Collapsed = localStorage.getItem('column1Collapsed') === 'true'
     const col2Collapsed = localStorage.getItem('column2Collapsed') === 'true'
+    const audioPanelCollapsed = localStorage.getItem('audioPanelCollapsed') === 'true'
     const emptyCategories = localStorage.getItem('showEmptyCategories') === 'true'
     setIsColumn1Collapsed(col1Collapsed)
     setIsColumn2Collapsed(col2Collapsed)
+    setIsAudioPanelCollapsed(audioPanelCollapsed)
     setShowEmptyCategories(emptyCategories)
   }, [])
 
@@ -724,6 +727,12 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
     localStorage.setItem('showEmptyCategories', String(newState))
   }
 
+  const toggleAudioPanel = () => {
+    const newState = !isAudioPanelCollapsed
+    setIsAudioPanelCollapsed(newState)
+    localStorage.setItem('audioPanelCollapsed', String(newState))
+  }
+
   if (!collection || !collectionConfig) {
     return null
   }
@@ -782,8 +791,8 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
       </Drawer>
 
       <Box flex="1" display="flex" overflow="hidden" position="relative">
-        {/* Column 1: Navigation - Desktop only */}
-        {isDesktop && !isColumn1Collapsed && (
+        {/* Column 1: Navigation - Desktop and Tablet Landscape */}
+        {(isDesktop || (isTablet && !isPortrait)) && !isColumn1Collapsed && (
           <Navigation
             deities={showEmptyCategories ? deities : deities.filter(d => d.songCount > 0)}
             selectedDeity={selectedDeity}
@@ -795,21 +804,23 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
           />
         )}
 
-        {/* Toggle button for Column 1 - Desktop only */}
-        {isDesktop && (
+        {/* Toggle button for Column 1 - Desktop and Tablet Landscape */}
+        {(isDesktop || (isTablet && !isPortrait)) && (
           <IconButton
             aria-label={isColumn1Collapsed ? 'Expand navigation' : 'Collapse navigation'}
-            icon={isColumn1Collapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />}
+            icon={isColumn1Collapsed ? <ChevronRightIcon boxSize={5} /> : <ChevronLeftIcon boxSize={5} />}
             onClick={toggleColumn1}
-            size="sm"
+            size="md"
             position="absolute"
-            left={isColumn1Collapsed ? 0 : '200px'}
+            left={isColumn1Collapsed ? 0 : (isTablet ? '200px' : '200px')}
             top="50%"
             transform="translateY(-50%)"
             zIndex={10}
-            variant="solid"
-            opacity={0.7}
-            _hover={{ opacity: 1 }}
+            bg={colorMode === 'dark' ? 'orange.500' : 'orange.400'}
+            color="white"
+            _hover={{ bg: colorMode === 'dark' ? 'orange.400' : 'orange.500' }}
+            borderRadius="full"
+            boxShadow="md"
             transition="all 0.3s"
           />
         )}
@@ -1039,13 +1050,13 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
         {(isDesktop || isTablet) && (
           <IconButton
             aria-label={isColumn2Collapsed ? 'Expand song list' : 'Collapse song list'}
-            icon={isColumn2Collapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />}
+            icon={isColumn2Collapsed ? <ChevronRightIcon boxSize={5} /> : <ChevronLeftIcon boxSize={5} />}
             onClick={toggleColumn2}
-            size="sm"
+            size="md"
             position="absolute"
             left={
               isTablet
-                ? (isColumn2Collapsed ? '0px' : '240px')
+                ? (isColumn2Collapsed ? (isPortrait ? '0px' : (isColumn1Collapsed ? '0px' : '200px')) : (isPortrait ? '240px' : (isColumn1Collapsed ? '240px' : '440px')))
                 : isColumn1Collapsed
                   ? (isColumn2Collapsed ? '0px' : '280px')
                   : (isColumn2Collapsed ? '200px' : '480px')
@@ -1053,9 +1064,11 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
             top="50%"
             transform="translateY(-50%)"
             zIndex={10}
-            variant="solid"
-            opacity={0.7}
-            _hover={{ opacity: 1 }}
+            bg={colorMode === 'dark' ? 'orange.500' : 'orange.400'}
+            color="white"
+            _hover={{ bg: colorMode === 'dark' ? 'orange.400' : 'orange.500' }}
+            borderRadius="full"
+            boxShadow="md"
             transition="all 0.3s"
           />
         )}
@@ -1088,24 +1101,63 @@ export const CollectionView = ({ onLogout }: CollectionViewProps) => {
             {/* Audio panel - hide on mobile (shown separately) */}
             {!isMobile && (
               <Box
-                h={`${audioPanelHeight}px`}
+                position="relative"
                 borderTop="1px"
                 borderColor={colorMode === 'dark' ? 'dark.border' : 'calm.border'}
                 flexShrink={0}
               >
-                <AudioPanel
-                  nowPlayingSong={nowPlayingSong}
-                  loading={audioLoading}
-                  panelHeight={audioPanelHeight}
-                  onHeightChange={setAudioPanelHeight}
-                  onPrev={nowPlayingSong ? () => handleAudioAdjacentSelect('prev') : undefined}
-                  onNext={nowPlayingSong ? () => handleAudioAdjacentSelect('next') : undefined}
-                  hasPrev={nowPlayingSong ? audioQueue.findIndex(song => song.id === nowPlayingSong.id) > 0 : false}
-                  hasNext={nowPlayingSong ? audioQueue.findIndex(song => song.id === nowPlayingSong.id) < audioQueue.length - 1 : false}
-                  autoExternalUrl={autoExternalUrl}
-                  isDesktopOverride={isDesktop}
-                  resetKey={`${selectedDeity?.id}-${selectedSong?.id}`}
+                {/* Audio panel collapse toggle */}
+                <IconButton
+                  aria-label={isAudioPanelCollapsed ? 'Expand audio panel' : 'Collapse audio panel'}
+                  icon={isAudioPanelCollapsed ? <ChevronUpIcon boxSize={5} /> : <ChevronDownIcon boxSize={5} />}
+                  onClick={toggleAudioPanel}
+                  size="md"
+                  position="absolute"
+                  left="50%"
+                  top="-18px"
+                  transform="translateX(-50%)"
+                  zIndex={10}
+                  bg={colorMode === 'dark' ? 'orange.500' : 'orange.400'}
+                  color="white"
+                  _hover={{ bg: colorMode === 'dark' ? 'orange.400' : 'orange.500' }}
+                  borderRadius="full"
+                  boxShadow="md"
+                  transition="all 0.3s"
                 />
+                {isAudioPanelCollapsed ? (
+                  <Box
+                    h="36px"
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
+                    bg={colorMode === 'dark' ? 'dark.surface' : 'calm.surface'}
+                    px={4}
+                  >
+                    <Text
+                      fontSize="sm"
+                      color={colorMode === 'dark' ? 'dark.textSecondary' : 'calm.textSecondary'}
+                      noOfLines={1}
+                    >
+                      {nowPlayingSong ? `🎵 ${nowPlayingSong.name}` : 'Audio Panel'}
+                    </Text>
+                  </Box>
+                ) : (
+                  <Box h={`${audioPanelHeight}px`}>
+                    <AudioPanel
+                      nowPlayingSong={nowPlayingSong}
+                      loading={audioLoading}
+                      panelHeight={audioPanelHeight}
+                      onHeightChange={setAudioPanelHeight}
+                      onPrev={nowPlayingSong ? () => handleAudioAdjacentSelect('prev') : undefined}
+                      onNext={nowPlayingSong ? () => handleAudioAdjacentSelect('next') : undefined}
+                      hasPrev={nowPlayingSong ? audioQueue.findIndex(song => song.id === nowPlayingSong.id) > 0 : false}
+                      hasNext={nowPlayingSong ? audioQueue.findIndex(song => song.id === nowPlayingSong.id) < audioQueue.length - 1 : false}
+                      autoExternalUrl={autoExternalUrl}
+                      isDesktopOverride={isDesktop}
+                      resetKey={`${selectedDeity?.id}-${selectedSong?.id}`}
+                    />
+                  </Box>
+                )}
               </Box>
             )}
           </Box>
